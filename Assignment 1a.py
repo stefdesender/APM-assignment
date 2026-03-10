@@ -1,1 +1,2 @@
-assignment 1 hihi
+import gurobipy as gp
+from gurobipy import GRB
