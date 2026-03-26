@@ -61,9 +61,11 @@ for i in parts:
         # ── 1. Inventory balance ───────────────────────────────────────────
         # Inventory(t) = Inventory(t-1) + receipts(t) - demand(t)
         # Receipts in period t come from orders placed in period t - lead_time
-
-        inv_prev = INIT_INV[i] if t == 1 else I[i, t - 1]
-
+        if t == 1:
+            inv_prev = INIT_INV[i]
+        else:
+            inv_prev = I[i, t - 1]
+            
         # Orders placed in period (t - lead_time[i]) arrive in period t
         order_placement_period = t - LEAD_TIME[i]
         if order_placement_period >= 1:
