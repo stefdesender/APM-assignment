@@ -1,19 +1,19 @@
 # input_data.py
 # All parameter data for the APM Project 2026
 
-# ── Parts ──────────────────────────────────────────────────────────────────
+# Parts
 PARTS = ['B1401', 'B2302', 'B3201', 'B4702', 'V1501', 'V6302', 'E2801']
 END_PRODUCT = 'E2801'
 T = 30  # number of periods
 
-# ── Bill of Materials (parent: {child: qty}) ───────────────────────────────
+# Bill of Materials (parent: {child: qty}) 
 BOM = {
     'E2801': {'V1501': 4, 'V6302': 3},
     'V1501': {'B1401': 4, 'B2302': 3},
     'V6302': {'B3201': 2, 'B4702': 7},
 }
 
-# ── Lead times (periods) ───────────────────────────────────────────────────
+# Lead times (periods)
 LEAD_TIME = {
     'B1401': 4,
     'B2302': 2,
@@ -24,7 +24,7 @@ LEAD_TIME = {
     'E2801': 1,
 }
 
-# ── Minimum lot sizes ──────────────────────────────────────────────────────
+# Minimum lot sizes
 MIN_LOT = {
     'B1401': 1200,
     'B2302': 1200,
@@ -35,7 +35,7 @@ MIN_LOT = {
     'E2801': 600,
 }
 
-# ── Beginning inventory ────────────────────────────────────────────────────
+# Beginning inventory
 INIT_INV = {
     'B1401': 6400,
     'B2302': 4000,
@@ -46,7 +46,7 @@ INIT_INV = {
     'E2801': 1350,
 }
 
-# ── Setup costs (€/setup) ──────────────────────────────────────────────────
+# Setup costs (€/setup)
 SETUP_COST = {
     'B1401': 2500,
     'B2302': 2500,
@@ -57,7 +57,7 @@ SETUP_COST = {
     'E2801': 4500,
 }
 
-# ── Holding costs (€/week/unit) ────────────────────────────────────────────
+# Holding costs (€/week/unit)
 HOLDING_COST = {
     'B1401': 0.5,
     'B2302': 0.7,
@@ -68,19 +68,19 @@ HOLDING_COST = {
     'E2801': 6.0,
 }
 
-# ── Forecasted demand (weeks 1–30) ─────────────────────────────────────────
+# Forecasted demand (weeks 1–30)
 DEMAND_FORECAST = [
     136, 144, 263, 123, 171, 195, 414, 147, 129, 245,
     208, 178, 168, 208, 173, 168, 181, 188, 212, 253,
     219, 196, 226, 239, 220, 199, 183, 149, 167, 205
 ]
 
-# ── Realized demand (weeks 1–30) ───────────────────────────────────────────
+# Realized demand (weeks 1–30)
 DEMAND_REALIZED = [
     120, 152, 213, 106, 148, 162, 367, 129, 110, 286,
     241, 212, 199, 236, 187, 186, 193, 201, 228, 237,
     253, 209, 247, 233, 195, 192, 179, 171, 197, 228
 ]
 
-# ── Backorder cost (assignment 1b) ─────────────────────────────────────────
+# Backorder cost (assignment 1b)
 BACKORDER_COST = 250  # €/unit/period
