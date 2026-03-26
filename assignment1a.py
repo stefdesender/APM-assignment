@@ -42,7 +42,7 @@ I = model.addVars(parts, periods, name="I", lb=0)
 
 # ── Big-M for lot-size linking constraint ──────────────────────────────────
 # Upper bound on order quantity: total forecasted demand * max BOM multiplier
-BIG_M = {i: sum(DEMAND_FORECAST) * 64 for i in parts}  # safe upper bound
+BIG_M = {i: sum(DEMAND_FORECAST) * 25 for i in parts}  # safe upper bound
 
 # ── Objective: minimize total setup + holding costs ────────────────────────
 model.setObjective(
@@ -65,10 +65,10 @@ for i in parts:
         inv_prev = INIT_INV[i] if t == 1 else I[i, t - 1]
 
         # Orders placed in period (t - lead_time[i]) arrive in period t
-        order_arrival_period = t - LEAD_TIME[i]
-        if order_arrival_period >= 1:
-            receipts = x[i, order_arrival_period]
-        elif order_arrival_period == 0:
+        order_placement_period = t - LEAD_TIME[i]
+        if order_placement_period >= 1:
+            receipts = x[i, order_placement_period]
+        elif order_placement_period == 0:
             # Order placed before horizon — assume 0 (already in init inv)
             receipts = 0
         else:
