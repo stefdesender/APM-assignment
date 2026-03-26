@@ -80,7 +80,6 @@ for i in parts:
         internal_demand = gp.quicksum(
             BOM[p][i] * x[p, t]
             for p in get_parents(i)
-            if t >= 1
         )
 
         # External demand only applies to end product
