@@ -159,3 +159,4 @@ if model.status == GRB.OPTIMAL:
 
 else:
     print(f"Model status: {model.status} — no optimal solution found.")
+    
