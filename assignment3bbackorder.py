@@ -223,7 +223,7 @@ output = {
     "overtime_usage_from_3a_plan": plan_3a.get("overtime_usage", {})
 }
 
-with open("output_3b.json", "w") as f:
+with open("output_3bbackorder.json", "w") as f:
     json.dump(output, f, indent=2)
 
 print("\nResults written to output_3b.json")
