@@ -119,12 +119,13 @@ try:
         sign = "+" if d >= 0 else ""
         return f"{sign}{d:{fmt}}"
 
-    print(f"{'Total cost (€)':<25} {res_1b['total_cost']:>12,.2f} {total_cost:>12,.2f} {diff(total_cost, res_1b['total_cost']):>12}")
-    print(f"{'Setup cost (€)':<25} {res_1b['setup_cost']:>12,.2f} {setup_cost:>12,.2f} {diff(setup_cost, res_1b['setup_cost']):>12}")
-    print(f"{'Holding cost (€)':<25} {res_1b['holding_cost']:>12,.2f} {holding_cost:>12,.2f} {diff(holding_cost, res_1b['holding_cost']):>12}")
-    print(f"{'Backorder cost (€)':<25} {res_1b['backorder_cost']:>12,.2f} {backorder_cost_total:>12,.2f} {diff(backorder_cost_total, res_1b['backorder_cost']):>12}")
-    print(f"{'Service level (%)':<25} {res_1b['service_level_pct']:>12.1f} {service_level:>12.1f} {diff(service_level, res_1b['service_level_pct'], '.1f'):>12}")
-    print(f"{'Fill rate (%)':<25} {res_1b['fill_rate_pct']:>12.1f} {fill_rate:>12.1f} {diff(fill_rate, res_1b['fill_rate_pct'], '.1f'):>12}")
+    print(f"{'Total cost (€)':<25} {res_1b['costs']['total_cost']:>12,.2f} {total_cost:>12,.2f} {diff(total_cost, res_1b['costs']['total_cost']):>12}")
+    print(f"{'Setup cost (€)':<25} {res_1b['costs']['setup_cost']:>12,.2f} {setup_cost:>12,.2f} {diff(setup_cost, res_1b['costs']['setup_cost']):>12}")
+    print(f"{'Holding cost (€)':<25} {res_1b['costs']['holding_cost']:>12,.2f} {holding_cost:>12,.2f} {diff(holding_cost, res_1b['costs']['holding_cost']):>12}")
+    print(f"{'Backorder cost (€)':<25} {res_1b['costs']['backorder_cost']:>12,.2f} {backorder_cost_total:>12,.2f} {diff(backorder_cost_total, res_1b['costs']['backorder_cost']):>12}")
+    print(f"{'Service level (%)':<25} {res_1b['service_metrics']['service_level_pct']:>12.1f} {service_level:>12.1f} {diff(service_level, res_1b['service_metrics']['service_level_pct'], '.1f'):>12}")
+    print(f"{'Fill rate (%)':<25} {res_1b['service_metrics']['fill_rate_pct']:>12.1f} {fill_rate:>12.1f} {diff(fill_rate, res_1b['service_metrics']['fill_rate_pct'], '.1f'):>12}")
+
 except FileNotFoundError:
     print("\n(output_1b.json not found — skipping comparison table)")
 

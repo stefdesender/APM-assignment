@@ -1,7 +1,7 @@
 {
-  "total_cost": 574096.7999999999,
+  "total_cost": 574114.8,
   "setup_cost": 145500.0,
-  "holding_cost": 401096.79999999993,
+  "holding_cost": 401114.8,
   "backorder_cost": 27500.0,
   "service_level_pct": 96.66666666666667,
   "fill_rate_pct": 98.17184643510055,
