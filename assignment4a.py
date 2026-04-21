@@ -129,6 +129,11 @@ for t in periods:
 # ── Solve ──────────────────────────────────────────────────────────────────
 model.optimize()
 
+def clean(val):
+    # Alles wat extreem dicht bij 0 ligt → 0 maken
+    if abs(val) < 1e-6:
+        return 0
+    return round(val)  # omdat inventory integer is
 # ── Output ─────────────────────────────────────────────────────────────────
 if model.status == GRB.OPTIMAL:
     dx_val     = dx.X
@@ -193,9 +198,9 @@ if model.status == GRB.OPTIMAL:
             for i in parts
         },
         "inventory": {
-            i: {str(t): I[i,t].X for t in periods}
+            i: {str(t): clean(I[i,t].X) for t in periods}
             for i in parts
-        }
+    }
     }
     with open("output_4a.json", "w") as f:
         json.dump(output, f, indent=2)
