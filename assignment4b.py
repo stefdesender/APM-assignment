@@ -110,6 +110,12 @@ for i in parts:
 # ── Solve ──────────────────────────────────────────────────────────────────
 model.optimize()
 
+def clean(val):
+    # Alles wat extreem dicht bij 0 ligt → 0 maken
+    if abs(val) < 1e-6:
+        return 0
+    return round(val)  # omdat inventory integer is
+
 # ── Results ───────────────────────────────────────────────────────────────
 if model.status in (GRB.OPTIMAL, GRB.SUBOPTIMAL):
 
@@ -196,7 +202,7 @@ if model.status in (GRB.OPTIMAL, GRB.SUBOPTIMAL):
         },
         "backorder_per_period": {str(t): BO[t].X for t in periods},
         "inventory": {
-            i: {str(t): I[i,t].X for t in periods} for i in parts
+            i: {str(t): clean(I[i,t].X) for t in periods} for i in parts
         }
     }
     with open("output_4b.json", "w") as f:
