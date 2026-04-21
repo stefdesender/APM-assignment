@@ -71,7 +71,7 @@ I      = model.addVars(parts, periods, name="I",  vtype=GRB.INTEGER, lb=0)
  
 # Permanent expansion (once, for the whole horizon)
 dx     = model.addVar(name="dx",     vtype=GRB.INTEGER, lb=0, ub=CAP_X_MAX_EXP)
-dy_pct = model.addVar(name="dy_pct", vtype=GRB.INTEGER, lb=0, ub=CAP_Y_MAX_PCT)
+dy_pct = model.addVar(name="dy_pct", lb=0, ub=CAP_Y_MAX_PCT)
  
 # Overtime per period
 ot_x   = model.addVars(periods, name="ot_x", vtype=GRB.INTEGER, lb=0, ub=CAP_X_OT_MAX)
