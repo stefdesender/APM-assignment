@@ -1,7 +1,5 @@
 """
-APM Project 2026 - Assignment 2b
-Evaluate the plan from 2a (finite capacity) against REALIZED demand.
-Calculates backorders, service level, fill rate, and updated costs.
+Assignment 2b
 """
 
 import json
@@ -11,18 +9,18 @@ from input_data import (
     DEMAND_REALIZED, BACKORDER_COST
 )
 
-# ── Load production schedule from 2a ──────────────────────────────────────
+# Load production schedule from 2a
 with open("output_2a.json") as f:
     plan = json.load(f)
 
-schedule = plan["production_schedule"]  # {part: {period: qty}}
+schedule = plan["production_schedule"] 
 
 periods = range(1, T + 1)
 
-# ── Simulate with realized demand ─────────────────────────────────────────
+#  Simulate with realized demand
 inventory  = {i: INIT_INV[i] for i in PARTS}
-backorders = {t: 0 for t in periods}   # backorders of end product per period
-delivered  = {t: 0 for t in periods}   # units delivered per period
+backorders = {t: 0 for t in periods}   
+delivered  = {t: 0 for t in periods}   
 
 holding_cost         = 0.0
 setup_cost           = 0.0
@@ -32,25 +30,24 @@ periods_fully_met = 0
 demand_per_period = DEMAND_REALIZED
 
 for t in periods:
-    # 1. Receive arrivals (orders placed t - lead_time periods ago)
+   
     for i in PARTS:
         lt = LEAD_TIME[i]
         source_period = str(t - lt)
         qty = schedule.get(i, {}).get(source_period, 0)
         inventory[i] += qty
 
-        # Setup cost: incurred whenever an order arrives
         if qty > 0:
             setup_cost += SETUP_COST[i]
 
-    # 2. Consume components for internal production
+  
     for parent, children in BOM.items():
         prod_qty = schedule.get(parent, {}).get(str(t), 0)
         if prod_qty > 0:
             for child, qty_per_unit in children.items():
                 inventory[child] -= prod_qty * qty_per_unit
 
-    # 3. Fulfill realized end-product demand
+  
     d = demand_per_period[t - 1]
     available = inventory[END_PRODUCT]
 
@@ -63,15 +60,15 @@ for t in periods:
         backorders[t] = d - available
         inventory[END_PRODUCT] = 0
 
-    # 4. Accumulate holding costs (end of period)
+    
     for i in PARTS:
         if inventory[i] > 0:
             holding_cost += HOLDING_COST[i] * inventory[i]
 
-    # 5. Backorder cost
+   
     backorder_cost_total += BACKORDER_COST * backorders[t]
 
-# ── Performance metrics ────────────────────────────────────────────────────
+#  Performance metrics 
 total_demand    = sum(DEMAND_REALIZED)
 total_delivered = sum(delivered.values())
 total_backorder = sum(backorders.values())
@@ -80,7 +77,7 @@ service_level = periods_fully_met / T * 100
 fill_rate     = total_delivered / total_demand * 100
 total_cost    = setup_cost + holding_cost + backorder_cost_total
 
-# ── Print results ──────────────────────────────────────────────────────────
+#Print results 
 print(f"\n{'='*60}")
 print(f"ASSIGNMENT 2b - REALIZED DEMAND EVALUATION (Finite Capacity Plan)")
 print(f"{'='*60}")
@@ -104,7 +101,7 @@ for t in periods:
 if not any_bo:
     print("  No backorders — all demand met on time!")
 
-# ── Comparison with 1b ─────────────────────────────────────────────────────
+#Comparison with 1b
 try:
     with open("output_1b.json") as f:
         res_1b = json.load(f)
@@ -129,7 +126,7 @@ try:
 except FileNotFoundError:
     print("\n(output_1b.json not found — skipping comparison table)")
 
-# ── Write output ───────────────────────────────────────────────────────────
+# Write output
 output_2b = {
     "total_cost": total_cost,
     "setup_cost": setup_cost,

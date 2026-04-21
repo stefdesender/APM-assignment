@@ -1,5 +1,5 @@
 """
-APM Project 2026 - Assignment 1b
+Assignment 1b
 """
 
 from openpyxl import Workbook, load_workbook
@@ -12,19 +12,17 @@ from input_data import (
     DEMAND_REALIZED, BACKORDER_COST,
 )
 
-# ── Load 1a plan from OUTPUT.xlsx ─────────────────────────────────────────
-# We re-read the production schedule from the Output_1a sheet
+#Load 1a plan from OUTPUT.xlsx 
 from openpyxl import load_workbook as _lw
 
 _wb = _lw("OUTPUT.xlsx", data_only=True)
 _ws = _wb["Output_1a"]
 
-# Cost summary is in rows 3-5, col C
+
 total_cost_1a  = _ws.cell(3, 3).value
 total_setup_1a = _ws.cell(4, 3).value
 
-# Re-run 1a model to get actual variable values
-# (easier to just re-solve than parse the sheet)
+
 import gurobipy as gp
 from gurobipy import GRB
 
@@ -66,7 +64,7 @@ model.optimize()
 schedule = {i: {t: x[i,t].X for t in periods} for i in PARTS}
 cost_1a  = model.ObjVal
 
-# ── Simulate 1b with realized demand ──────────────────────────────────────
+# Simulate 1b with realized demand 
 inv   = {i: {} for i in PARTS}
 bo    = {i: {} for i in PARTS}
 h_pos = {i: {} for i in PARTS}
@@ -106,7 +104,7 @@ for t in periods:
     prev_bo = bo[END_PRODUCT][t]
 fill_rate = 1.0 - (total_new_bo / total_demand) if total_demand > 0 else 1.0
 
-# ── Write to OUTPUT.xlsx, sheet Output_1b ─────────────────────────────────
+#Write to OUTPUT.xlsx, sheet Output_1b 
 OUTPUT_FILE = "OUTPUT.xlsx"
 SHEET_NAME  = "Output_1b"
 
@@ -120,7 +118,7 @@ else:
     ws = wb.active
     ws.title = SHEET_NAME
 
-# ── Styles (identical to 1a) ───────────────────────────────────────────────
+# Styles
 NO_FILL    = PatternFill(fill_type=None)
 BLACK_FILL = PatternFill("solid", start_color="000000", end_color="000000")
 RED_FILL   = PatternFill("solid", start_color="000000", end_color="000000")
@@ -152,7 +150,7 @@ def section_title(ws, r, last_col, text):
     for col in range(3, last_col + 1):
         ws.cell(r, col).border = bot_medium
 
-# ── Column widths ──────────────────────────────────────────────────────────
+#Column widths 
 ws.column_dimensions["A"].width = 1
 ws.column_dimensions["B"].width = 9
 for col in range(3, T + 4):
@@ -160,16 +158,14 @@ for col in range(3, T + 4):
 
 last_col = T + 2
 
-# ══════════════════════════════════════════════════════════════════════════
+
 # Row 1: Title
-# ══════════════════════════════════════════════════════════════════════════
 ws.row_dimensions[1].height = 26
 ws.merge_cells(f"B1:{get_column_letter(last_col)}1")
 plain(ws.cell(1, 2), "Assignment 1b - Realized demand evaluation", bold=True, size=13)
 
-# ══════════════════════════════════════════════════════════════════════════
+
 # Rows 3-8: Cost summary + comparison
-# ══════════════════════════════════════════════════════════════════════════
 ws.row_dimensions[2].height = 4
 summary_rows = [
     ("Setup cost",      total_setup,     '"€"#,##0.00', False),
@@ -186,9 +182,8 @@ for r, (label, val, fmt, bold) in enumerate(summary_rows, start=3):
     plain(vc, round(val, 2), bold=bold, size=9, fmt=fmt)
     ws.merge_cells(f"C{r}:{get_column_letter(last_col)}{r}")
 
-# ══════════════════════════════════════════════════════════════════════════
+
 # Rows 10-11: Service metrics
-# ══════════════════════════════════════════════════════════════════════════
 ws.row_dimensions[9].height = 6
 section_title(ws, 10, last_col, "Service metrics (end product)")
 ws.row_dimensions[11].height = 16
@@ -202,9 +197,8 @@ plain(ws.cell(12, 3),
       size=9)
 ws.merge_cells(f"C12:{get_column_letter(last_col)}12")
 
-# ══════════════════════════════════════════════════════════════════════════
+
 # Production schedule
-# ══════════════════════════════════════════════════════════════════════════
 r = 14
 section_title(ws, r, last_col, "Production / order schedule (units)")
 r += 1
@@ -222,9 +216,8 @@ for idx, i in enumerate(PARTS, start=1):
         plain(ws.cell(r, t + 2), val, bold=bool(val), size=9, align="center",
               fmt='#,##0' if val != "" else None, border=bot_thin)
 
-# ══════════════════════════════════════════════════════════════════════════
+
 # Inventory levels
-# ══════════════════════════════════════════════════════════════════════════
 r += 2
 section_title(ws, r, last_col, "Inventory levels (end of period, realized)")
 r += 1
@@ -243,9 +236,8 @@ for idx, i in enumerate(PARTS, start=1):
         plain(ws.cell(r, t + 2), v, size=9, align="center",
               color=col, fmt='#,##0;-#,##0', border=bot_thin)
 
-# ══════════════════════════════════════════════════════════════════════════
+
 # Backorder schedule (end product only)
-# ══════════════════════════════════════════════════════════════════════════
 r += 2
 section_title(ws, r, last_col, f"Backorder schedule - {END_PRODUCT} (end product only)")
 r += 1
@@ -265,9 +257,8 @@ for t in periods:
     else:
         plain(ws.cell(r, t + 2), "", size=9, align="center", border=bot_thin)
 
-# ══════════════════════════════════════════════════════════════════════════
+
 # Setup decisions
-# ══════════════════════════════════════════════════════════════════════════
 r += 2
 section_title(ws, r, last_col, "Setup decisions")
 r += 1

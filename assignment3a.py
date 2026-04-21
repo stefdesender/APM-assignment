@@ -1,12 +1,5 @@
 """
-APM Project 2026 - Assignment 3a
-MIP model for production planning with finite capacity + overtime option
-
-- Workstation X: capacity 800 units/week, overtime up to 300 extra units at €2/unit
-- Workstation Y: capacity 7*24*60 - 80 = 10000 min/week,
-                 overtime up to 38 hours at €120/hour
-- Overtime cost = cost per unit/hour of CAPACITY EXPANDED (not per unit produced)
-- Demand = forecasted demand
+Assignment 3a
 """
 
 import gurobipy as gp
@@ -17,7 +10,7 @@ from input_data import (
     INIT_INV, SETUP_COST, HOLDING_COST, DEMAND_FORECAST
 )
 
-# ── Helper functions ────────────────────────────────────────────────────────
+# Helper functions
 def get_parents(part):
     parents = {}
     for parent, children in BOM.items():
@@ -35,26 +28,26 @@ def clean_num(val, tol=1e-6, digits=6):
         return 0.0
     return round(v, digits)
 
-# ── Capacity data ───────────────────────────────────────────────────────────
+# Capacity data
 CAPACITY_X        = 800
-CAPACITY_X_OT_MAX = 300          # max overtime units/week on X
-COST_OT_X         = 2            # €/unit of capacity expanded on X
+CAPACITY_X_OT_MAX = 300         
+COST_OT_X         = 2            
 
-CAPACITY_Y        = 7 * 24 * 60 - 80   # = 10000 min/week
-CAPACITY_Y_OT_MAX = 38           # max overtime hours/week on Y
-COST_OT_Y         = 120          # €/hour of capacity expanded on Y
+CAPACITY_Y        = 7 * 24 * 60 - 80   
+CAPACITY_Y_OT_MAX = 38           
+COST_OT_Y         = 120          
 
 PROC_TIME_Y = {
-    'B1401': 3,   # min/unit
-    'B2302': 2    # min/unit
+    'B1401': 3,   
+    'B2302': 2   
 }
 
-# ── Build model ────────────────────────────────────────────────────────────
+# Build model 
 model = gp.Model("APM_Assignment3a")
 periods = range(1, T + 1)
 parts   = PARTS
 
-# ── Decision variables ─────────────────────────────────────────────────────
+#Decision variables 
 x    = model.addVars(parts, periods, name="x", vtype=GRB.INTEGER, lb=0)
 y    = model.addVars(parts, periods, name="y", vtype=GRB.BINARY)
 I    = model.addVars(parts, periods, name="I", vtype=GRB.INTEGER, lb=0)
@@ -65,10 +58,10 @@ ot_x = model.addVars(periods, name="ot_x", vtype=GRB.INTEGER, lb=0, ub=CAPACITY_
 # Overtime on Y in hours
 ot_y = model.addVars(periods, name="ot_y", lb=0, ub=CAPACITY_Y_OT_MAX)
 
-# ── Big-M values ───────────────────────────────────────────────────────────
+#Big-M values 
 BIG_M = {i: sum(DEMAND_FORECAST) * 25 for i in parts}
 
-# ── Objective ──────────────────────────────────────────────────────────────
+# Objective 
 model.setObjective(
     gp.quicksum(
         SETUP_COST[i] * y[i, t] + HOLDING_COST[i] * I[i, t]
@@ -82,7 +75,7 @@ model.setObjective(
     GRB.MINIMIZE
 )
 
-# ── Constraints ────────────────────────────────────────────────────────────
+#  Constraints 
 for i in parts:
     for t in periods:
         inv_prev = INIT_INV[i] if t == 1 else I[i, t - 1]
@@ -112,14 +105,14 @@ for i in parts:
             name=f"bigM_{i}_{t}"
         )
 
-# ── Workstation X capacity ─────────────────────────────────────────────────
+# Workstation X capacity
 for t in periods:
     model.addConstr(
         x['E2801', t] <= CAPACITY_X + ot_x[t],
         name=f"capacity_X_{t}"
     )
 
-# ── Workstation Y capacity ─────────────────────────────────────────────────
+# Workstation Y capacity 
 for t in periods:
     model.addConstr(
         PROC_TIME_Y['B1401'] * x['B1401', t] +
@@ -128,10 +121,10 @@ for t in periods:
         name=f"capacity_Y_{t}"
     )
 
-# ── Solve ──────────────────────────────────────────────────────────────────
+# Solve 
 model.optimize()
 
-# ── Output ─────────────────────────────────────────────────────────────────
+#  Output 
 if model.status == GRB.OPTIMAL:
     total_setup   = sum(SETUP_COST[i]   * y[i, t].X for i in parts for t in periods)
     total_holding = sum(HOLDING_COST[i] * I[i, t].X for i in parts for t in periods)
@@ -244,6 +237,3 @@ if model.status == GRB.OPTIMAL:
         json.dump(output, f, indent=2)
 
     print("\nResults written to output_3a.json")
-
-else:
-    print(f"Model status: {model.status} — no optimal solution found.")

@@ -1,6 +1,5 @@
 """
-APM Project 2026 - Assignment 1a
-MIP model for production planning (infinite capacity, forecasted demand)
+Assignment 1a
 """
 
 import gurobipy as gp
@@ -70,7 +69,7 @@ if model.status == GRB.OPTIMAL:
         ws = wb.active
         ws.title = SHEET_NAME
 
-    # ── Styles ────────────────────────────────────────────────────────────
+    # Styles 
     NO_FILL   = PatternFill(fill_type=None)
     BLACK_FILL = PatternFill("solid", start_color="000000", end_color="000000")
 
@@ -100,7 +99,7 @@ if model.status == GRB.OPTIMAL:
         cell.alignment = Alignment(horizontal="center", vertical="center")
         cell.border = none_border
 
-    # ── Column widths ─────────────────────────────────────────────────────
+    # Column widths
     ws.column_dimensions["A"].width = 1
     ws.column_dimensions["B"].width = 9
     for col in range(3, T + 4):
@@ -108,16 +107,12 @@ if model.status == GRB.OPTIMAL:
 
     last_col = T + 2
 
-    # ══════════════════════════════════════════════════════════════════════
-    # Row 1: Title
-    # ══════════════════════════════════════════════════════════════════════
+    # Title
     ws.row_dimensions[1].height = 26
     ws.merge_cells(f"B1:{get_column_letter(last_col)}1")
     plain(ws.cell(1, 2), "Assignment 1a - Optimal solution", bold=True, size=13)
 
-    # ══════════════════════════════════════════════════════════════════════
-    # Rows 3-5: Cost summary
-    # ══════════════════════════════════════════════════════════════════════
+    # Cost summary
     ws.row_dimensions[2].height = 4
     for r, (label, val) in enumerate([
         ("Total cost",   model.ObjVal),
@@ -130,9 +125,7 @@ if model.status == GRB.OPTIMAL:
         plain(vc, round(val, 2), bold=(r == 3), size=9, align="left", fmt='"€"#,##0.00')
         ws.merge_cells(f"C{r}:{get_column_letter(last_col)}{r}")
 
-    # ══════════════════════════════════════════════════════════════════════
-    # Section: Production schedule
-    # ══════════════════════════════════════════════════════════════════════
+    # Production schedule
     r = 7
     ws.row_dimensions[r].height = 6
     r = 8
@@ -158,9 +151,8 @@ if model.status == GRB.OPTIMAL:
             plain(vc, val, bold=bool(val), size=9, align="center",
                   fmt='#,##0' if val != "" else None, border=bottom_only)
 
-    # ══════════════════════════════════════════════════════════════════════
-    # Section: Inventory levels
-    # ══════════════════════════════════════════════════════════════════════
+
+    # Inventory levels
     r += 2
     ws.row_dimensions[r].height = 14
     plain(ws.cell(r, 2), "Inventory levels (end of period)", size=8,
@@ -184,9 +176,8 @@ if model.status == GRB.OPTIMAL:
             plain(ws.cell(r, t + 2), v, size=9, align="center",
                   color=col_val, fmt='#,##0', border=bottom_only)
 
-    # ══════════════════════════════════════════════════════════════════════
-    # Section: Setup decisions
-    # ══════════════════════════════════════════════════════════════════════
+
+    # Setup decisions
     r += 2
     ws.row_dimensions[r].height = 14
     plain(ws.cell(r, 2), "Setup decisions", size=8,
@@ -215,6 +206,3 @@ if model.status == GRB.OPTIMAL:
     print(f"Total cost:    EUR {model.ObjVal:,.2f}")
     print(f"  Setup cost:  EUR {total_setup:,.2f}")
     print(f"  Holding cost: EUR {total_holding:,.2f}")
-
-else:
-    print(f"Model status: {model.status} -- no optimal solution found.")

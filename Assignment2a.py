@@ -1,9 +1,5 @@
 """
-APM Project 2026 - Assignment 2a
-MIP model for production planning with finite capacity
-- Demand = forecasted demand
-- Workstation X capacity for E2801
-- Workstation Y capacity for B1401 and B2302
+Assignment 2a
 """
 
 import gurobipy as gp
@@ -14,7 +10,7 @@ from input_data import (
     INIT_INV, SETUP_COST, HOLDING_COST, DEMAND_FORECAST
 )
 
-# ── Helper functions ────────────────────────────────────────────────────────
+# Helper functions 
 def get_children(part):
     """Return direct children of a part in the BOM."""
     return BOM.get(part, {})
@@ -27,22 +23,22 @@ def get_parents(part):
             parents[parent] = children[part]
     return parents
 
-# ── Capacity data for assignment 2a ────────────────────────────────────────
-CAPACITY_X = 800  # units/week for E2801
-CAPACITY_Y = 7 * 24 * 60 - 80  # minutes/week = 10000
+# Capacity
+CAPACITY_X = 800  
+CAPACITY_Y = 7 * 24 * 60 - 80 
 
 PROC_TIME_Y = {
-    'B1401': 3,  # min/unit
-    'B2302': 2   # min/unit
+    'B1401': 3,  
+    'B2302': 2  
 }
 
-# ── Build model ────────────────────────────────────────────────────────────
+# Build model
 model = gp.Model("APM_Assignment2a")
 
 periods = range(1, T + 1)
 parts = PARTS
 
-# ── Decision variables ─────────────────────────────────────────────────────
+#Decision variables 
 # x[i,t] : order/production quantity of part i in period t
 x = model.addVars(parts, periods, name="x", vtype=GRB.INTEGER, lb=0)
 
@@ -52,11 +48,10 @@ y = model.addVars(parts, periods, name="y", vtype=GRB.BINARY)
 # I[i,t] : inventory of part i at end of period t
 I = model.addVars(parts, periods, name="I", lb=0)
 
-# ── Big-M values ───────────────────────────────────────────────────────────
-# Safe upper bound, similar to your 1a approach
+# Big-M values 
 BIG_M = {i: sum(DEMAND_FORECAST) * 25 for i in parts}
 
-# ── Objective: minimize setup + holding costs ──────────────────────────────
+# Objective
 model.setObjective(
     gp.quicksum(
         SETUP_COST[i] * y[i, t] + HOLDING_COST[i] * I[i, t]
@@ -65,7 +60,7 @@ model.setObjective(
     GRB.MINIMIZE
 )
 
-# ── Constraints ────────────────────────────────────────────────────────────
+#Constraints 
 for i in parts:
     for t in periods:
 
@@ -108,7 +103,6 @@ for i in parts:
         )
 
 # 4. Capacity constraint on workstation X
-# Only E2801 uses workstation X, max 800 units/week
 for t in periods:
     model.addConstr(
         x['E2801', t] <= CAPACITY_X,
@@ -116,23 +110,22 @@ for t in periods:
     )
 
 # 5. Capacity constraint on workstation Y
-# B1401 needs 3 min/unit, B2302 needs 2 min/unit
 for t in periods:
     model.addConstr(
         3 * x['B1401', t] + 2 * x['B2302', t] <= CAPACITY_Y,
         name=f"capacity_Y_{t}"
     )
 
-# ── Solve ──────────────────────────────────────────────────────────────────
+# Solve
 model.optimize()
 
 def clean(val):
-    # Alles wat extreem dicht bij 0 ligt → 0 maken
+    
     if abs(val) < 1e-6:
         return 0
-    return round(val)  # omdat inventory integer is
+    return round(val)
 
-# ── Output ─────────────────────────────────────────────────────────────────
+# Output
 if model.status == GRB.OPTIMAL:
     print(f"\n{'='*60}")
     print("ASSIGNMENT 2a - OPTIMAL SOLUTION")
@@ -161,7 +154,7 @@ if model.status == GRB.OPTIMAL:
     for i in parts:
         print(f"  {i}: {I[i, 30].X:,.0f} units")
 
-    # Optional: show capacity usage
+    # show capacity usage
     print(f"\n{'─'*60}")
     print("CAPACITY USAGE")
     print(f"{'─'*60}")
@@ -203,6 +196,3 @@ if model.status == GRB.OPTIMAL:
         json.dump(output, f, indent=2)
 
     print("\nResults written to output_2.json")
-
-else:
-    print(f"Model status: {model.status} — no optimal solution found.")
