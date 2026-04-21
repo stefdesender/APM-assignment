@@ -70,165 +70,151 @@ if model.status == GRB.OPTIMAL:
         ws = wb.active
         ws.title = SHEET_NAME
 
-    # ── Palette (neutral, minimal) ─────────────────────────────────────────
-    # Charcoal header, light warm gray rows, white base
-    CHARCOAL    = PatternFill("solid", start_color="2C2C2A", end_color="2C2C2A")  # near-black
-    STONE       = PatternFill("solid", start_color="F1EFE8", end_color="F1EFE8")  # warm off-white
-    WHITE       = PatternFill("solid", start_color="FFFFFF", end_color="FFFFFF")
-    ACCENT      = PatternFill("solid", start_color="E6F1FB", end_color="E6F1FB")  # very pale blue for totals
-    DOT_GREEN   = PatternFill("solid", start_color="EAF3DE", end_color="EAF3DE")  # soft green for setups
+    # ── Styles ────────────────────────────────────────────────────────────
+    NO_FILL   = PatternFill(fill_type=None)
+    BLACK_FILL = PatternFill("solid", start_color="000000", end_color="000000")
 
-    thin   = Side(style="thin",   color="D3D1C7")
-    BORDER = Border(left=thin, right=thin, top=thin, bottom=thin)
-    NO_BORDER = Border()
+    none_border = Border()
+    blk  = Side(style="thin", color="000000")
+    gray = Side(style="thin", color="AAAAAA")
+    bot_black = Border(bottom=Side(style="medium", color="000000"))
+    full_gray = Border(left=gray, right=gray, top=gray, bottom=gray)
+    full_black = Border(left=blk, right=blk, top=blk, bottom=blk)
+    bottom_only = Border(bottom=Side(style="thin", color="CCCCCC"))
 
-    def h(cell, text, small=False):
-        """Header cell: charcoal bg, white text."""
-        cell.value     = text
-        cell.font      = Font(name="Arial", bold=False, color="FFFFFF",
-                              size=8 if small else 10)
-        cell.fill      = CHARCOAL
-        cell.alignment = Alignment(horizontal="center", vertical="center")
-        cell.border    = BORDER
-
-    def d(cell, val, bold=False, align="right", fill=WHITE, fmt=None, color="2C2C2A"):
-        cell.value     = val
-        cell.font      = Font(name="Arial", bold=bold, color=color, size=9)
-        cell.fill      = fill
+    def plain(cell, val, bold=False, align="left", size=10, color="000000", fmt=None, border=None):
+        cell.value = val
+        cell.font  = Font(name="Calibri", bold=bold, size=size, color=color)
         cell.alignment = Alignment(horizontal=align, vertical="center")
-        cell.border    = BORDER
+        cell.fill  = NO_FILL
+        if border:
+            cell.border = border
         if fmt:
             cell.number_format = fmt
 
-    def section_label(ws, row, col_end, text):
-        """Small all-caps section divider."""
-        ws.row_dimensions[row].height = 18
-        ws.merge_cells(f"B{row}:{get_column_letter(col_end)}{row}")
-        c = ws.cell(row, 2, text)
-        c.font      = Font(name="Arial", bold=True, color="888780", size=8)
-        c.fill      = WHITE
-        c.alignment = Alignment(horizontal="left", vertical="center")
-        c.border    = NO_BORDER
+    def header_cell(cell, val):
+        """Black background, white text, centered."""
+        cell.value = val
+        cell.font  = Font(name="Calibri", bold=False, size=9, color="FFFFFF")
+        cell.fill  = BLACK_FILL
+        cell.alignment = Alignment(horizontal="center", vertical="center")
+        cell.border = none_border
 
-    # ── Column layout ──────────────────────────────────────────────────────
-    ws.column_dimensions["A"].width = 1.5   # left margin
-    ws.column_dimensions["B"].width = 10    # part label
+    # ── Column widths ─────────────────────────────────────────────────────
+    ws.column_dimensions["A"].width = 1
+    ws.column_dimensions["B"].width = 9
     for col in range(3, T + 4):
         ws.column_dimensions[get_column_letter(col)].width = 5.5
 
-    last_col = T + 2   # column index of last week
+    last_col = T + 2
 
     # ══════════════════════════════════════════════════════════════════════
-    # Row 1 – Title
+    # Row 1: Title
     # ══════════════════════════════════════════════════════════════════════
-    ws.row_dimensions[1].height = 28
+    ws.row_dimensions[1].height = 26
     ws.merge_cells(f"B1:{get_column_letter(last_col)}1")
-    tc = ws.cell(1, 2, "Assignment 1a  —  Optimal solution")
-    tc.font      = Font(name="Arial", bold=False, size=13, color="2C2C2A")
-    tc.fill      = WHITE
-    tc.alignment = Alignment(horizontal="left", vertical="center")
-    tc.border    = NO_BORDER
+    plain(ws.cell(1, 2), "Assignment 1a - Optimal solution", bold=True, size=13)
 
     # ══════════════════════════════════════════════════════════════════════
-    # Rows 3-5 – Cost summary (3 metric cells, no table)
+    # Rows 3-5: Cost summary
     # ══════════════════════════════════════════════════════════════════════
-    ws.row_dimensions[2].height = 6
+    ws.row_dimensions[2].height = 4
     for r, (label, val) in enumerate([
         ("Total cost",   model.ObjVal),
         ("Setup cost",   total_setup),
         ("Holding cost", total_holding),
     ], start=3):
-        ws.row_dimensions[r].height = 18
-        lc = ws.cell(r, 2, label)
-        lc.font      = Font(name="Arial", size=8, color="888780")
-        lc.fill      = WHITE
-        lc.alignment = Alignment(horizontal="left", vertical="center")
-        lc.border    = NO_BORDER
-
-        vc = ws.cell(r, 3, round(val, 2))
-        vc.font         = Font(name="Arial", size=9,
-                               bold=(r == 3), color="2C2C2A")
-        vc.fill         = ACCENT if r == 3 else WHITE
-        vc.alignment    = Alignment(horizontal="left", vertical="center")
-        vc.number_format = '€#,##0.00'
-        vc.border       = NO_BORDER
+        ws.row_dimensions[r].height = 16
+        plain(ws.cell(r, 2), label, size=9, color="555555")
+        vc = ws.cell(r, 3)
+        plain(vc, round(val, 2), bold=(r == 3), size=9, align="left", fmt='"€"#,##0.00')
         ws.merge_cells(f"C{r}:{get_column_letter(last_col)}{r}")
 
     # ══════════════════════════════════════════════════════════════════════
-    # Production schedule
+    # Section: Production schedule
     # ══════════════════════════════════════════════════════════════════════
     r = 7
-    section_label(ws, r, last_col, "PRODUCTION / ORDER SCHEDULE (units)")
+    ws.row_dimensions[r].height = 6
+    r = 8
+    ws.row_dimensions[r].height = 14
+    plain(ws.cell(r, 2), "Production / order schedule (units)", size=8,
+          color="888888", border=bot_black)
+    for col in range(3, last_col + 1):
+        ws.cell(r, col).border = bot_black
 
-    r += 1
+    r = 9
     ws.row_dimensions[r].height = 16
-    h(ws.cell(r, 2), "Part")
+    header_cell(ws.cell(r, 2), "Part")
     for t in periods:
-        h(ws.cell(r, t + 2), str(t), small=True)
+        header_cell(ws.cell(r, t + 2), str(t))
 
     for idx, i in enumerate(parts, start=1):
         r += 1
         ws.row_dimensions[r].height = 15
-        alt = STONE if idx % 2 == 0 else WHITE
-        d(ws.cell(r, 2), i, bold=False, align="left", fill=alt, color="444441")
+        plain(ws.cell(r, 2), i, size=9, border=bottom_only)
         for t in periods:
             val = round(x[i, t].X) if x[i, t].X > 0.5 else ""
-            d(ws.cell(r, t + 2), val, align="center", fill=alt,
-              fmt='#,##0' if val != "" else None,
-              bold=bool(val), color="2C2C2A" if val else "888780")
+            vc = ws.cell(r, t + 2)
+            plain(vc, val, bold=bool(val), size=9, align="center",
+                  fmt='#,##0' if val != "" else None, border=bottom_only)
 
     # ══════════════════════════════════════════════════════════════════════
-    # Inventory levels
+    # Section: Inventory levels
     # ══════════════════════════════════════════════════════════════════════
     r += 2
-    section_label(ws, r, last_col, "INVENTORY LEVELS (end of period)")
+    ws.row_dimensions[r].height = 14
+    plain(ws.cell(r, 2), "Inventory levels (end of period)", size=8,
+          color="888888", border=bot_black)
+    for col in range(3, last_col + 1):
+        ws.cell(r, col).border = bot_black
 
     r += 1
     ws.row_dimensions[r].height = 16
-    h(ws.cell(r, 2), "Part")
+    header_cell(ws.cell(r, 2), "Part")
     for t in periods:
-        h(ws.cell(r, t + 2), str(t), small=True)
+        header_cell(ws.cell(r, t + 2), str(t))
 
     for idx, i in enumerate(parts, start=1):
         r += 1
         ws.row_dimensions[r].height = 15
-        alt = STONE if idx % 2 == 0 else WHITE
-        d(ws.cell(r, 2), i, bold=False, align="left", fill=alt, color="444441")
+        plain(ws.cell(r, 2), i, size=9, border=bottom_only)
         for t in periods:
             v = round(I[i, t].X)
-            d(ws.cell(r, t + 2), v, align="center", fill=alt, fmt='#,##0',
-              color="2C2C2A" if v > 0 else "B4B2A9")
+            col_val = "000000" if v > 0 else "BBBBBB"
+            plain(ws.cell(r, t + 2), v, size=9, align="center",
+                  color=col_val, fmt='#,##0', border=bottom_only)
 
     # ══════════════════════════════════════════════════════════════════════
-    # Setup decisions
+    # Section: Setup decisions
     # ══════════════════════════════════════════════════════════════════════
     r += 2
-    section_label(ws, r, last_col, "SETUP DECISIONS")
+    ws.row_dimensions[r].height = 14
+    plain(ws.cell(r, 2), "Setup decisions", size=8,
+          color="888888", border=bot_black)
+    for col in range(3, last_col + 1):
+        ws.cell(r, col).border = bot_black
 
     r += 1
     ws.row_dimensions[r].height = 16
-    h(ws.cell(r, 2), "Part")
+    header_cell(ws.cell(r, 2), "Part")
     for t in periods:
-        h(ws.cell(r, t + 2), str(t), small=True)
+        header_cell(ws.cell(r, t + 2), str(t))
 
     for idx, i in enumerate(parts, start=1):
         r += 1
         ws.row_dimensions[r].height = 15
-        alt = STONE if idx % 2 == 0 else WHITE
-        d(ws.cell(r, 2), i, bold=False, align="left", fill=alt, color="444441")
+        plain(ws.cell(r, 2), i, size=9, border=bottom_only)
         for t in periods:
             setup = int(round(y[i, t].X))
-            vc = ws.cell(r, t + 2)
-            if setup:
-                d(vc, "●", align="center", fill=DOT_GREEN, color="3B6D11")
-            else:
-                d(vc, "", align="center", fill=alt)
+            plain(ws.cell(r, t + 2), "x" if setup else "",
+                  bold=True, size=9, align="center",
+                  color="000000", border=bottom_only)
 
     wb.save(OUTPUT_FILE)
-    print(f"\nResults written to {OUTPUT_FILE} → sheet '{SHEET_NAME}'")
-    print(f"Total cost:    €{model.ObjVal:,.2f}")
-    print(f"  Setup cost:  €{total_setup:,.2f}")
-    print(f"  Holding cost:€{total_holding:,.2f}")
+    print(f"\nResults written to {OUTPUT_FILE} -> sheet '{SHEET_NAME}'")
+    print(f"Total cost:    EUR {model.ObjVal:,.2f}")
+    print(f"  Setup cost:  EUR {total_setup:,.2f}")
+    print(f"  Holding cost: EUR {total_holding:,.2f}")
 
 else:
-    print(f"Model status: {model.status} — no optimal solution found.")
+    print(f"Model status: {model.status} -- no optimal solution found.")
