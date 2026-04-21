@@ -56,9 +56,9 @@ periods = range(1, T + 1)
 parts   = PARTS
 
 # ── Decision variables ─────────────────────────────────────────────────────
-x = model.addVars(parts, periods, name="x", lb=0)
+x = model.addVars(parts, periods, name="x",vtype=GRB.INTEGER, lb=0)
 y = model.addVars(parts, periods, name="y", vtype=GRB.BINARY)
-I = model.addVars(parts, periods, name="I", lb=0)
+I = model.addVars(parts, periods, name="I",vtype=GRB.INTEGER, lb=0)
 
 # Permanent expansion variables
 dx     = model.addVar(name="dx",     vtype=GRB.INTEGER, lb=0, ub=CAP_X_MAX_EXP)

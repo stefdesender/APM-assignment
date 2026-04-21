@@ -66,7 +66,7 @@ periods = range(1, T + 1)
 parts   = PARTS
 
 # Inventory (end of period) and backorder variables
-I  = model.addVars(parts, periods, name="I",  lb=0)
+I  = model.addVars(parts, periods, name="I",vtype=GRB.INTEGER,  lb=0)
 BO = model.addVars(periods,        name="BO", lb=0)   # cumulative backorder, end product only
 
 # Setup cost is determined by the fixed schedule (no setup variables needed)
