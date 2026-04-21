@@ -61,8 +61,8 @@ y = model.addVars(parts, periods, name="y", vtype=GRB.BINARY)
 I = model.addVars(parts, periods, name="I",vtype=GRB.INTEGER, lb=0)
 
 # Permanent expansion variables
-dx     = model.addVar(name="dx",     vtype=GRB.INTEGER, lb=0, ub=CAP_X_MAX_EXP)
-dy_pct = model.addVar(name="dy_pct", vtype=GRB.INTEGER, lb=0, ub=CAP_Y_MAX_PCT)
+dx     = model.addVar(name="dx",vtype=GRB.INTEGER, lb=0, ub=CAP_X_MAX_EXP)
+dy_pct = model.addVar(name="dy_pct", lb=0, ub=CAP_Y_MAX_PCT)
 
 # ── Big-M ──────────────────────────────────────────────────────────────────
 BIG_M = {i: sum(DEMAND_FORECAST) * 25 for i in parts}
