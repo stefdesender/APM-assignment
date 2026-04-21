@@ -126,6 +126,12 @@ for t in periods:
 # ── Solve ──────────────────────────────────────────────────────────────────
 model.optimize()
 
+def clean(val):
+    # Alles wat extreem dicht bij 0 ligt → 0 maken
+    if abs(val) < 1e-6:
+        return 0
+    return round(val)  # omdat inventory integer is
+
 # ── Output ─────────────────────────────────────────────────────────────────
 if model.status == GRB.OPTIMAL:
     print(f"\n{'='*60}")
@@ -177,17 +183,17 @@ if model.status == GRB.OPTIMAL:
             "workstation_Y_minutes_per_week": CAPACITY_Y
         },
         "production_schedule": {
-            i: {str(t): x[i, t].X for t in periods if x[i, t].X > 0.5}
+            i: {str(t): clean(x[i, t].X) for t in periods if x[i, t].X > 0.5}
             for i in parts
         },
         "inventory": {
-            i: {str(t): I[i, t].X for t in periods}
+            i: {str(t): clean(I[i, t].X) for t in periods}
             for i in parts
         },
         "capacity_usage": {
             str(t): {
-                "X_used_units": x['E2801', t].X,
-                "Y_used_minutes": 3 * x['B1401', t].X + 2 * x['B2302', t].X
+                "X_used_units": clean(x['E2801', t].X),
+                "Y_used_minutes": clean(3 * x['B1401', t].X + 2 * x['B2302', t].X)
             }
             for t in periods
         }
