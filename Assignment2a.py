@@ -264,6 +264,4 @@ if model.status == GRB.OPTIMAL:
     print(f"Total cost:    EUR {model.ObjVal:,.2f}")
     print(f"  Setup:       EUR {total_setup:,.2f}")
     print(f"  Holding:     EUR {total_holding:,.2f}")
-
-else:
-    print(f"Model status: {model.status} -- no optimal solution found.")
+    
