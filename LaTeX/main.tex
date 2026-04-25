@@ -1,0 +1,164 @@
+\documentclass[a4paper,faculty=eb,language=en,doctype=article,sftitles=false]{ugent-doc}
+
+\usepackage[utf8]{inputenc}
+\usepackage[T1]{fontenc}
+\usepackage[english]{babel}
+\usepackage{lmodern}
+\usepackage{amsmath}
+\usepackage{booktabs}
+\usepackage{enumitem}
+\usepackage{graphicx}
+\usepackage{float}
+\usepackage{xcolor}
+\usepackage[hidelinks]{hyperref}
+
+\setlength{\emergencystretch}{3em}
+\setlength{\parindent}{0pt}
+\setlength{\parskip}{0.6em}
+
+\thetitle{%
+\textbf{Advanced Production Management (F000896A)}\\[0.3em]
+\textbf{Project Report 2026}%
+}
+
+\infoboxa{Prof.\ Dr.\ Veronique Lim\`ere \& Hannah Verplancke}
+
+\infoboxb{
+Students:\quad Group A\\[0.5em]
+\begin{tabular}{@{}lll@{}}
+\hspace*{2em}JONAS PAREWYCK & \hspace*{2em}02210616 & \hspace*{2em}jonas.parewyck@ugent.be\\
+\hspace*{2em}LEONARD DESMET & \hspace*{2em}02203659 & \hspace*{2em}leonard.desmet@ugent.be\\
+\hspace*{2em}STEF DESENDER & \hspace*{2em}02208912 & \hspace*{2em}stef.desender@ugent.be\\
+\hspace*{2em}SARE VANHOUTTE & \hspace*{2em}02211452 & \hspace*{2em}sare.vanhoutte@ugent.be\\
+\hspace*{2em}MARGOT DE COCK & \hspace*{2em}02110278 & \hspace*{2em}macock.decock@ugent.be\\
+\end{tabular}
+}
+
+\infoboxc{Academic year:\quad 2025--2026}
+
+\begin{document}
+
+\maketitle
+\clearpage
+\newgeometry{margin=2.54cm}
+\tableofcontents
+\clearpage
+
+\section{Introduction to the case}
+
+This project focuses on optimizing production planning in a multi-stage manufacturing system using a Mixed Integer Programming (MIP) approach. The objective is to minimize total costs while ensuring efficient production and inventory decisions. By comparing solutions based on forecasted and realized demand, the project provides insights into the impact of uncertainty and the trade-offs between cost efficiency and service levels.
+
+\section{Assignment 1: Formulating an MIP model with infinite production capacity}
+
+\subsection{1a. Plan based on forecasted demand}
+
+\subsubsection{Indices}
+
+\[
+i \in parts = \{B1401, B2302, B3201, B4702, V1501, V6302, E2801\}
+\]
+
+\[
+t \in weeks = \{1,2,\ldots,30\}
+\]
+
+\subsubsection{Parameters}
+
+The model covers a planning horizon of \(T = 30\) periods (weeks). Each part \(i\) has a lead time \(LT_i\), representing the number of periods between placing and receiving an order. A minimum lot size \(L_i\) enforces that whenever a part is ordered, at least a certain quantity must be produced or purchased. The beginning inventory \(I_{i,0}\) gives the stock on hand at the start of the planning horizon. Holding costs \(h_i\) are charged per unit per week for carrying inventory, while setup costs \(S_i\) are incurred each time an order is placed. Finally, \(FD_{i,t}\) represents the forecasted demand for part \(i\) in period \(t\), and \(RD_{i,t}\) the realized demand.
+
+While the forecasted and realized demand \((FD_{i,t}\) and \(RD_{i,t})\) for the end product \((E2801)\) are externally driven, the demand for its underlying components, such as \(V1501\), \(V6302\), \(B1401\), etc., is a derived internal demand. This demand is not directly triggered by the customer, but by the production schedule of the parent item. Specifically, the gross requirements for components are determined by the Planned Order Releases of their respective parents. This means that for \(V1501\) and \(V6302\), the internal demand corresponds to the quantity of \(E2801\) being started, multiplied by the Bill of Materials (BOM) factor. Crucially, this demand occurs at the start of the assembly process, which is exactly one lead time period before the finished \(E2801\) is completed. The same analogy can be used for the other parts, creating a cascading effect. This implies that as soon as the production of a parent part starts, the required child components are immediately withdrawn from the inventory.
+
+\[
+\begin{aligned}
+T &= \text{forecast horizon} = 30 \text{ periods/weeks} \\
+LT_i &= \text{lead time (periods/weeks) of part } i \\
+L_i &= \text{minimum lot size (units) for part } i \\
+I_{i,0} &= \text{beginning inventory of part } i \\
+h_i &= \text{holding cost } (€/\text{week/unit}) \text{ of part } i \\
+S_i &= \text{setup cost } (€/\text{setup}) \text{ for ordering part } i \\
+FD_{i,t} &= \text{forecasted demand (units) of part } i \text{ in period } t \\
+RD_{i,t} &= \text{realized demand (units) of part } i \text{ in period } t
+\end{aligned}
+\]
+
+\subsubsection{Decision variables}
+
+The model contains three decision variables for each part \(i\) and period \(t\).
+
+The first is \(x_{i,t}\), representing the number of units of part \(i\) ordered or produced in period \(t\). This is a continuous non-negative variable, meaning it can take any value of zero or above.
+
+The second is \(y_{i,t}\), a binary variable equal to 1 if an order or production run is initiated for part \(i\) in period \(t\), and 0 otherwise. This variable is what links the setup cost to the ordering decision. A setup cost \(S_i\) is only incurred when \(y_{i,t}=1\).
+
+The third is \(I_{i,t}\), representing the inventory level of part \(i\) at the end of period \(t\). This is again a continuous non-negative variable, reflecting the stock on hand after all receipts and withdrawals in period \(t\) have been processed. A holding cost \(h_i\) is charged per unit remaining in inventory at the end of each period.
+
+\[
+x_{i,t} = \text{number of units of part } i \text{ ordered in period } t
+\]
+
+\[
+y_{i,t} =
+\begin{cases}
+1, & \text{if an order for part } i \text{ in period } t \text{ is placed} \\
+0, & \text{otherwise}
+\end{cases}
+\]
+
+\[
+I_{i,t} = \text{inventory (units) of part } i \text{ in period } t
+\]
+
+\subsubsection{Model}
+
+The objective function minimizes the total cost over the planning horizon of 30 weeks across all parts. It consists of two cost components.
+
+The first is the holding cost \(h_i \cdot I_{i,t}\), charged for every unit of part \(i\) remaining in inventory at the end of period \(t\). The second is the setup cost \(S_i \cdot y_{i,t}\), incurred every time a production run or order is initiated for part \(i\) in period \(t\). Something to notice is that no production cost is included, since all demand must be fulfilled and the total quantity to be produced is therefore fixed regardless of timing. The production cost would be the same for every feasible solution and would therefore not affect which solution Gurobi picks as optimal.
+
+The core trade-off the model faces is a classic one in production planning: producing in large infrequent lots saves on setup costs but leads to more inventory being held, while producing in smaller and more frequent lots keeps inventory low but means paying more setup costs. The optimizer finds the sweet spot between these two competing forces.
+
+\[
+\min \sum_{t=1}^{T=30} \sum_{i \in parts}
+\left( h_i I_{i,t} + S_i y_{i,t} \right)
+\]
+
+\subsubsection{Constraints}
+
+The model has four sets of constraints.
+
+The inventory balance constraint ensures that the stock at the end of each period is consistent with what was available before, what arrived, and what was consumed. The stock of part \(i\) at the end of period \(t\) equals the stock from the previous period, plus any order placed \(LT_i\) periods earlier that arrives in period \(t\), minus the forecasted demand \(FD_{i,t}\) in that period. When \(t-LT_i<1\), no order could have been placed within the planning horizon, so the receipt term drops out and inventory simply decreases by the demand of that period.
+
+\[
+I_{i,t} = I_{i,t-1} + x_{i,t-LT_i} - FD_{i,t}
+\]
+
+\[
+\text{if } t - LT_i < 1 \Rightarrow x_{i,t}=0
+\Rightarrow I_{i,t} = I_{i,t-1} - FD_{i,t}
+\]
+
+The second constraint links ordering quantity to the setup variable. A quantity can only be produced or ordered if a setup takes place, enforced by \(x_{i,t} \leq M y_{i,t}\). If \(y_{i,t}=0\), then \(x_{i,t}\) is forced to zero, and if \(y_{i,t}=1\), then production is allowed up to the big-\(M\) upper bound. The value of \(M\) was set to 25 times the total forecasted demand over all 30 periods. The highest BOM multiplier in the system is 21, which applies to \(B4702\) (3 units of \(V6302\) per \(E2801\), times 7 units of \(B4702\) per \(V6302\)). A factor of 25 was chosen to add a small safety margin on top of this, ensuring \(M\) is never restrictive for any part. Note that \(M\) could also be made part-specific, using the exact BOM multiplier per part rather than a uniform upper bound, which would give tighter bounds and potentially improve solver performance.
+
+\[
+x_{i,t} \leq M y_{i,t}
+\]
+
+The third constraint enforces the minimum lot size. Whenever an order is placed, at least \(L_i\) units must be ordered. This reflects real-world supplier or production requirements, where ordering below a certain quantity is simply not possible.
+
+Together the second and third constraint ensure that \(x_{i,t}\) is either exactly zero or somewhere between \(L_i\) and \(M\), with a setup cost charged whenever the latter is the case.
+
+\[
+x_{i,t} \geq L_i y_{i,t}
+\]
+
+\subsubsection{Optimal solution and different cost types}
+
+The model reached a total cost of €394{,}454, of which €79{,}500 comes from setups and €314{,}954 from holding inventory. The fact that holding costs make up about 80\% of the total is not surprising given the large beginning inventories across all parts, which sit in stock for several weeks before being used up.
+
+Looking at the production schedule, Gurobi clearly prefers a small number of large production runs over many smaller ones. Every component is produced exactly 3 times over the 30 weeks, while \(E2801\) is produced 4 times. Paying a setup cost once and producing a big batch is simply cheaper than paying that cost repeatedly for smaller quantities.
+
+For \(E2801\), the inventory gradually decreases between production runs and lands exactly on zero at the end of weeks 23 and 30. This is Gurobi doing its job: why hold stock you no longer need? For the components, the story is similar but more extreme. Their beginning inventories get consumed within the first few weeks and then drop to zero, where they stay for the rest of the horizon. New stock arrives just in time for the next production run of the parent part, with no buffer in between.
+
+\(V6302\) is a nice example of this: its entire beginning inventory of 1,950 units disappears in week 1, because the first \(E2801\) lot of 650 units requires exactly \(3 \times 650 = 1{,}950\) units of \(V6302\). Not a single unit is left over.
+
+The €79{,}500 in setup costs comes from 3 setups for each of the 6 component parts and 4 setups for \(E2801\), each charged at their respective setup cost from the parameter table.
+
+\end{document}
