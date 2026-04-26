@@ -274,6 +274,3 @@ if model.status == GRB.OPTIMAL:
         json.dump(output, f, indent=2)
 
     print("\nResults written to output_3b.json")
-
-else:
-    print(f"Model status: {model.status} — no optimal solution found.")

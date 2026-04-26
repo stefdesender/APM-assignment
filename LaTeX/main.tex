@@ -11,6 +11,8 @@
 \usepackage{float}
 \usepackage{xcolor}
 \usepackage[hidelinks]{hyperref}
+\usepackage{pgfplots}
+\pgfplotsset{compat=1.18}
 
 \setlength{\emergencystretch}{3em}
 \setlength{\parindent}{0pt}
@@ -66,32 +68,35 @@ This project focuses on optimizing production planning in a multi-stage manufact
 
 \subsubsection{Indices}
 
-\[
-i \in parts = \{B1401, B2302, B3201, B4702, V1501, V6302, E2801\}
-\]
-
-\[
-t \in weeks = \{1,2,\ldots,30\}
-\]
+\begin{itemize}[noitemsep]
+    \item $i \in parts = \{B1401, B2302, B3201, B4702, V1501, V6302, E2801\}$
+    \item $t \in weeks = \{1,2,\ldots,30\}$
+\end{itemize}
 
 \subsubsection{Parameters}
 
 The model covers a planning horizon of \(T = 30\) periods (weeks). Each part \(i\) has a lead time \(LT_i\), representing the number of periods between placing and receiving an order. A minimum lot size \(L_i\) enforces that whenever a part is ordered, at least a certain quantity must be produced or purchased. The beginning inventory \(I_{i,0}\) gives the stock on hand at the start of the planning horizon. Holding costs \(h_i\) are charged per unit per week for carrying inventory, while setup costs \(S_i\) are incurred each time an order is placed. Finally, \(FD_{i,t}\) represents the forecasted demand for part \(i\) in period \(t\), and \(RD_{i,t}\) the realized demand.
 
-While the forecasted and realized demand \((FD_{i,t}\) and \(RD_{i,t})\) for the end product \((E2801)\) are externally driven, the demand for its underlying components, such as \(V1501\), \(V6302\), \(B1401\), etc., is a derived internal demand. This demand is not directly triggered by the customer, but by the production schedule of the parent item. Specifically, the gross requirements for components are determined by the Planned Order Releases of their respective parents. This means that for \(V1501\) and \(V6302\), the internal demand corresponds to the quantity of \(E2801\) being started, multiplied by the Bill of Materials (BOM) factor. Crucially, this demand occurs at the start of the assembly process, which is exactly one lead time period before the finished \(E2801\) is completed. The same analogy can be used for the other parts, creating a cascading effect. This implies that as soon as the production of a parent part starts, the required child components are immediately withdrawn from the inventory.
+While the forecasted and realized demand \((FD_{i,t}\) and \(RD_{i,t})\) for the end product \((E2801)\) are externally driven, the demand for its underlying components is derived from the production schedule of the parent item.
 
-\[
-\begin{aligned}
-T &= \text{forecast horizon} = 30 \text{ periods/weeks} \\
-LT_i &= \text{lead time (periods/weeks) of part } i \\
-L_i &= \text{minimum lot size (units) for part } i \\
-I_{i,0} &= \text{beginning inventory of part } i \\
-h_i &= \text{holding cost } (€/\text{week/unit}) \text{ of part } i \\
-S_i &= \text{setup cost } (€/\text{setup}) \text{ for ordering part } i \\
-FD_{i,t} &= \text{forecasted demand (units) of part } i \text{ in period } t \\
-RD_{i,t} &= \text{realized demand (units) of part } i \text{ in period } t
-\end{aligned}
-\]
+\begin{table}[H]
+\centering
+\begin{tabular}{ll}
+\toprule
+\textbf{Symbol} & \textbf{Description} \\
+\midrule
+$T$ & forecast horizon (30 weeks) \\
+$LT_i$ & lead time of part $i$ \\
+$L_i$ & minimum lot size of part $i$ \\
+$I_{i,0}$ & initial inventory of part $i$ \\
+$h_i$ & holding cost (€ / unit / week) \\
+$S_i$ & setup cost (€ / setup) \\
+$FD_{i,t}$ & forecasted demand of part $i$ in period $t$ \\
+$RD_{i,t}$ & realized demand of part $i$ in period $t$ \\
+\bottomrule
+\end{tabular}
+\caption{Overview of model parameters}
+\end{table}
 
 \subsubsection{Decision variables}
 
@@ -191,17 +196,49 @@ Compared with part 1a, the total cost increases from €394{,}454 to €447{,}79
 
 \begin{table}[H]
 \centering
+\begin{minipage}[c]{0.44\textwidth}
+\centering
 \begin{tabular}{lrr}
 \toprule
-\textbf{Cost type} & \textbf{Part 1a (€)} & \textbf{Part 1b (€)} \\
+\textbf{Cost comparison} & \textbf{Part 1a (€)} & \textbf{Part 1b (€)} \\
 \midrule
-Holding cost   & 314{,}954 & 321{,}542 \\
-Setup cost     & 79{,}500  & 79{,}500  \\
-Backorder cost & --        & 46{,}750  \\
+Holding cost   & €314{,}954 & €321{,}542 \\
+Setup cost     & €79{,}500  & €79{,}500  \\
+Backorder cost & --         & €46{,}750  \\
 \midrule
-\textbf{Total cost} & \textbf{394{,}454} & \textbf{447{,}792} \\
+\textbf{Total cost} & \textbf{€394{,}454} & \textbf{€447{,}792} \\
 \bottomrule
 \end{tabular}
+\end{minipage}
+\hspace{0.06\textwidth}
+\begin{minipage}[c]{0.44\textwidth}
+\centering
+\textbf{Cost comparison}
+
+\vspace{0.3em}
+\begin{tikzpicture}
+\begin{axis}[
+    height=4cm,
+    width=\textwidth,
+    ymin=350000,
+    ymax=470000,
+    xtick={1,2},
+    xticklabels={Part 1a, Part 1b},
+    ylabel={Total cost (€)},
+    grid=both,
+    scaled y ticks=false,
+    yticklabel style={
+        /pgf/number format/fixed,
+        /pgf/number format/1000 sep={,}
+    }
+]
+\addplot+[mark=*] coordinates {
+    (1,394454)
+    (2,447792)
+};
+\end{axis}
+\end{tikzpicture}
+\end{minipage}
 \caption{Cost comparison between part 1a and part 1b}
 \end{table}
 
@@ -277,11 +314,11 @@ Overall, the total cost increases from €540{,}488.80 to €574{,}114.80. Compa
 \toprule
 \textbf{Cost Comparison} & \textbf{Part 2a} & \textbf{Part 2b} \\
 \midrule
-Holding Cost   & €394{,}970.80 & €401{,}096.80 \\
+Holding Cost   & €394{,}988.80 & €401{,}096.80 \\
 Set-Up Cost    & €145{,}500.00 & €145{,}500.00 \\
 Backorder Cost & --            & €27{,}500.00 \\
 \midrule
-\textbf{Total Cost} & \textbf{€540{,}470.80} & \textbf{€574{,}096.80} \\
+\textbf{Total Cost} & \textbf{540{,}488.80} & \textbf{€574{,}096.80} \\
 \bottomrule
 \end{tabular}
 \caption{Comparison part 2a and 2b}
@@ -382,6 +419,41 @@ Overtime Cost  & --            & €6{,}442.00 \\
 \end{table}
 
 \subsection{Plan used on realized demand}
+
+In part 3b, the production plan obtained in part 3a is evaluated using the realized demand instead of the forecasted demand. The production schedule and the overtime decisions remain unchanged, meaning that no re-optimization is performed. As a result, the setup cost stays identical at €145{,}500.00 and the total overtime cost remains €6{,}442.00. The holding cost increases from €369{,}328.80 to €375{,}610.80 due to deviations between forecasted and realized demand. In addition, backorder costs of €34{,}000.00 arise, indicating that the plan is not able to fully absorb demand variability, even with the overtime capacity included in the original plan.
+
+The service performance of the plan can be measured through the service level and the fill rate. The service level is 93.33\%, meaning that in 28 out of the 30 weeks there is no backorder at the end of the period. The fill rate equals 97.74\%, which indicates that 5{,}881 out of 6{,}017 demanded units are delivered on time. Hence, the plan still performs well in terms of service, but realized demand causes shortages in some periods.
+
+Backorders occur in week 26 and week 30, with shortages of 26 and 110 units respectively. This shows that the overtime plan improves production flexibility compared to the strict finite-capacity case, but it does not completely eliminate the effect of demand uncertainty.
+
+Overall, the total cost increases from €521{,}270.80 to €561{,}552.80, corresponding to an increase of €40{,}282.00. This increase is mainly caused by the introduction of backorder costs and a higher holding cost, while setup and overtime costs remain unchanged.
+
+\begin{table}[H]
+\centering
+\begin{tabular}{lrr}
+\toprule
+\textbf{Cost comparison} & \textbf{Part 3a} & \textbf{Part 3b} \\
+\midrule
+Holding cost   & €369{,}328.80 & €375{,}610.80 \\
+Set-up cost    & €145{,}500.00 & €145{,}500.00 \\
+Overtime cost  & €6{,}442.00   & €6{,}442.00 \\
+Backorder cost & --            & €34{,}000.00 \\
+\midrule
+\textbf{Total cost} & \textbf{€521{,}270.80} & \textbf{€561{,}552.80} \\
+\bottomrule
+\end{tabular}
+\caption{Cost comparison part 3a and 3b}
+\end{table}
+
+\subsubsection{Additional sensitivity insight}
+
+The previous evaluation assumes that the production plan and the overtime decisions from part 3a remain fixed when realized demand occurs. Under this assumption, backorders still arise in weeks 26 and 30, leading to a backorder cost of €34{,}000.00. However, an additional sensitivity analysis was performed to examine what would happen if overtime capacity could be adjusted after observing realized demand.
+
+This scenario requires an important operational assumption. It assumes that the realized demand is known sufficiently early, for example at the beginning of the week, and that the company is flexible enough to still adapt overtime decisions before production is executed. This is not the same as assuming instantaneous reaction with zero time delay, which would be unrealistic. Rather, it represents a short-term flexible planning environment in which overtime can still be scheduled in response to updated demand information.
+
+Under this assumption, the remaining overtime capacity is sufficient to absorb the demand deviations. The model can eliminate all backorders by using additional overtime, resulting in a service level and fill rate of 100\%. In this sensitivity scenario, the total cost equals €538{,}767.00. This is higher than the forecast-based 3a cost of €521{,}270.80, but lower than the fixed-plan realized-demand evaluation in 3b, which resulted in a total cost of €561{,}552.80. The improvement is mainly caused by eliminating the €34{,}000.00 backorder cost, while only €442.00 of overtime cost is required.
+
+This indicates that overtime capacity has value not only as a planned capacity expansion, but also as a short-term flexibility buffer against demand uncertainty. Nevertheless, this interpretation depends strongly on the assumption that overtime decisions can still be adjusted after demand becomes known. If overtime must be fixed in advance together with the production plan, then the original 3b evaluation remains the more realistic comparison.
 
 \assignmentsection{Assignment 4: Adjusting the MIP model with machine expansion}
 
@@ -612,5 +684,9 @@ Backorder Cost & --            & €37{,}250.00 \\
 \end{tabular}
 \caption{Cost comparison part 5a and 5b}
 \end{table}
+
+\assignmentsection{Assignment 6:  Adjusting the MIP model with creative ideas}
+
+\assignmentsection{Appendix}
 
 \end{document}
