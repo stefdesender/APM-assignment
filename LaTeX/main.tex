@@ -16,6 +16,18 @@
 \setlength{\parindent}{0pt}
 \setlength{\parskip}{0.6em}
 
+% Sections appear unnumbered in the text, but still define numbering for subsections
+\newcommand{\assignmentsection}[1]{%
+  \refstepcounter{section}%
+  \section*{#1}%
+  \addcontentsline{toc}{section}{#1}%
+}
+
+\newcommand{\introsection}[1]{%
+  \section*{#1}%
+  \addcontentsline{toc}{section}{#1}%
+}
+
 \thetitle{%
 \textbf{Advanced Production Management (F000896A)}\\[0.3em]
 \textbf{Project Report 2026}%
@@ -44,13 +56,13 @@ Students:\quad Group A\\[0.5em]
 \tableofcontents
 \clearpage
 
-\section{Introduction to the case}
+\introsection{Introduction to the case}
 
 This project focuses on optimizing production planning in a multi-stage manufacturing system using a Mixed Integer Programming (MIP) approach. The objective is to minimize total costs while ensuring efficient production and inventory decisions. By comparing solutions based on forecasted and realized demand, the project provides insights into the impact of uncertainty and the trade-offs between cost efficiency and service levels.
 
-\section{Assignment 1: Formulating an MIP model with infinite production capacity}
+\assignmentsection{Assignment 1: Formulating an MIP model with infinite production capacity}
 
-\subsection{1a. Plan based on forecasted demand}
+\subsection{Plan based on forecasted demand}
 
 \subsubsection{Indices}
 
@@ -122,13 +134,15 @@ The core trade-off the model faces is a classic one in production planning: prod
 
 \subsubsection{Constraints}
 
-The model has four sets of constraints.
+The model has three main constraints.
 
 The inventory balance constraint ensures that the stock at the end of each period is consistent with what was available before, what arrived, and what was consumed. The stock of part \(i\) at the end of period \(t\) equals the stock from the previous period, plus any order placed \(LT_i\) periods earlier that arrives in period \(t\), minus the forecasted demand \(FD_{i,t}\) in that period. When \(t-LT_i<1\), no order could have been placed within the planning horizon, so the receipt term drops out and inventory simply decreases by the demand of that period.
 
-\[
-I_{i,t} = I_{i,t-1} + x_{i,t-LT_i} - FD_{i,t}
-\]
+\begin{align}
+I_{i,t} &= I_{i,t-1} + x_{i,t-LT_i} - FD_{i,t}
+&& \forall i,t
+\tag{1}
+\end{align}
 
 \[
 \text{if } t - LT_i < 1 \Rightarrow x_{i,t}=0
@@ -137,17 +151,19 @@ I_{i,t} = I_{i,t-1} + x_{i,t-LT_i} - FD_{i,t}
 
 The second constraint links ordering quantity to the setup variable. A quantity can only be produced or ordered if a setup takes place, enforced by \(x_{i,t} \leq M y_{i,t}\). If \(y_{i,t}=0\), then \(x_{i,t}\) is forced to zero, and if \(y_{i,t}=1\), then production is allowed up to the big-\(M\) upper bound. The value of \(M\) was set to 25 times the total forecasted demand over all 30 periods. The highest BOM multiplier in the system is 21, which applies to \(B4702\) (3 units of \(V6302\) per \(E2801\), times 7 units of \(B4702\) per \(V6302\)). A factor of 25 was chosen to add a small safety margin on top of this, ensuring \(M\) is never restrictive for any part. Note that \(M\) could also be made part-specific, using the exact BOM multiplier per part rather than a uniform upper bound, which would give tighter bounds and potentially improve solver performance.
 
-\[
-x_{i,t} \leq M y_{i,t}
-\]
+\begin{align}
+x_{i,t} &\leq M y_{i,t}
+&& \forall i,t
+\tag{2}
+\end{align}
 
-The third constraint enforces the minimum lot size. Whenever an order is placed, at least \(L_i\) units must be ordered. This reflects real-world supplier or production requirements, where ordering below a certain quantity is simply not possible.
+The third constraint enforces the minimum lot size. Whenever an order is placed, at least \(L_i\) units must be ordered. This reflects real-world supplier or production requirements, where ordering below a certain quantity is simply not possible. Together the second and third constraint ensure that \(x_{i,t}\) is either exactly zero or somewhere between \(L_i\) and \(M\), with a setup cost charged whenever the latter is the case.
 
-Together the second and third constraint ensure that \(x_{i,t}\) is either exactly zero or somewhere between \(L_i\) and \(M\), with a setup cost charged whenever the latter is the case.
-
-\[
-x_{i,t} \geq L_i y_{i,t}
-\]
+\begin{align}
+x_{i,t} &\geq L_i y_{i,t}
+&& \forall i,t
+\tag{3}
+\end{align}
 
 \subsubsection{Optimal solution and different cost types}
 
@@ -160,5 +176,441 @@ For \(E2801\), the inventory gradually decreases between production runs and lan
 \(V6302\) is a nice example of this: its entire beginning inventory of 1,950 units disappears in week 1, because the first \(E2801\) lot of 650 units requires exactly \(3 \times 650 = 1{,}950\) units of \(V6302\). Not a single unit is left over.
 
 The €79{,}500 in setup costs comes from 3 setups for each of the 6 component parts and 4 setups for \(E2801\), each charged at their respective setup cost from the parameter table.
+
+\subsection{Evaluation of the forecast-based plan under realized demand}
+
+In part 1b, the production plan obtained in part 1a is kept fixed and evaluated under the realized demand instead of the forecasted demand. This implies that no new optimization is performed. The setup decisions and production quantities from part 1a remain unchanged, while the demand for the end product is replaced by the realized demand values. Whenever the available inventory is insufficient to satisfy demand immediately, the unmet demand is backordered. A backorder cost of €250 per unit per period is incurred.
+
+Since the production plan itself is unchanged, the setup cost remains equal to the value obtained in part 1a, namely €79{,}500. The holding cost under realized demand equals €321{,}542, which is slightly higher than in part 1a. In addition, backorder costs arise and amount to €46{,}750. As a result, the total cost increases to €447{,}792.
+
+The service performance of the plan is evaluated using the service level and the fill rate. The service level equals 93.33\%, meaning that in 28 out of 30 periods there is no backorder at the end of the period. The fill rate equals 96.89\%, indicating that 5{,}830 out of 6{,}017 demanded units are delivered on time. Hence, although the plan was optimized for forecasted rather than realized demand, it still satisfies most customer demand without delay.
+
+Backorders occur only in weeks 23 and 30, with shortages of 77 and 110 units respectively. This shows that the plan from part 1a performs reasonably well under demand uncertainty, but is not fully robust against deviations between forecasted and realized demand. In periods where actual demand exceeds what the inventory profile can absorb, shortages arise.
+
+Compared with part 1a, the total cost increases from €394{,}454 to €447{,}792, corresponding to an increase of €53{,}338. This increase is mainly caused by the introduction of backorder costs, while the setup cost remains unchanged because the same production schedule is used. The holding cost also increases slightly, from €314{,}954 to €321{,}542. Overall, these results show that a plan based on forecasted demand can still perform relatively well under realized demand, but demand deviations lead to additional costs and reduced service performance.
+
+\begin{table}[H]
+\centering
+\begin{tabular}{lrr}
+\toprule
+\textbf{Cost type} & \textbf{Part 1a (€)} & \textbf{Part 1b (€)} \\
+\midrule
+Holding cost   & 314{,}954 & 321{,}542 \\
+Setup cost     & 79{,}500  & 79{,}500  \\
+Backorder cost & --        & 46{,}750  \\
+\midrule
+\textbf{Total cost} & \textbf{394{,}454} & \textbf{447{,}792} \\
+\bottomrule
+\end{tabular}
+\caption{Cost comparison between part 1a and part 1b}
+\end{table}
+
+\assignmentsection{Assignment 2: Adjusting the MIP model with finite production capacity}
+
+The objective of assignment 2 is to extend the model from assignment 1 by incorporating finite production capacity. In contrast to assignment 1, where production capacity was assumed to be unlimited, the production system is now constrained by the availability of two workstations. This makes the model more realistic, since production decisions are no longer only driven by setup and holding costs, but also by the limited weekly capacity of the production environment.
+
+\subsection{Plan based on forecasted demand}
+
+\subsubsection{New capacity constraints}
+
+Starting from the model in assignment 1a, two additional capacity constraints are introduced, one for each workstation. The inventory balance constraint, setup linking constraint and minimum lot size constraint from assignment 1a remain unchanged. The additional restrictions only limit the maximum feasible production quantities in each period.
+
+Workstation X is used for the production of the end product \(E2801\). Its maximum capacity equals 800 units per week. Therefore, the number of units of \(E2801\) started in production in a given week cannot exceed this weekly capacity:
+
+\begin{align}
+x_{E2801,t} &\leq 800
+&& \forall t \in \{1,\ldots,30\}
+\tag{4}
+\end{align}
+
+Workstation Y is used for parts \(B1401\) and \(B2302\). Producing one unit of \(B1401\) requires 3 minutes of processing time, while producing one unit of \(B2302\) requires 2 minutes. The workstation operates continuously during the week, except for an 80-minute maintenance break. Hence, the available capacity is:
+
+\[
+7 \cdot 24 \cdot 60 - 80 = 10{,}000 \text{ minutes per week}
+\]
+
+The corresponding capacity constraint for workstation Y is:
+
+\begin{align}
+3x_{B1401,t} + 2x_{B2302,t} &\leq 10{,}000
+&& \forall t \in \{1,\ldots,30\}
+\tag{5}
+\end{align}
+
+The complete model for assignment 2a is therefore the model from assignment 1a, extended with constraints (4) and (5). These capacity constraints restrict the timing of production and prevent the optimizer from producing arbitrarily large batches in a single period.
+
+\subsubsection{Cost comparison}
+
+Compared with assignment 1a, the finite-capacity model leads to a higher total cost. The total cost increases from €394{,}454.00 to €540{,}488.80. This increase is mainly caused by a higher setup cost, which rises from €79{,}500.00 to €145{,}500.00. Under limited capacity, the model can no longer always produce large batches in the most cost-efficient periods. Instead, production must be spread over more periods, resulting in more production runs and therefore more setups.
+
+The holding cost also increases from €314{,}954.00 to €394{,}988.80. This indicates that the capacity restrictions force some products to be produced earlier than in the infinite-capacity case, causing more inventory to be carried over time. Hence, the finite-capacity model is more realistic, but it comes at a higher cost because production flexibility is reduced.
+
+\begin{table}[H]
+\centering
+\begin{tabular}{lrr}
+\toprule
+\textbf{Cost type} & \textbf{Part 1a (€)} & \textbf{Part 2a (€)} \\
+\midrule
+Holding cost   & 314{,}954.00 & 394{,}988.80 \\
+Setup cost     & 79{,}500.00  & 145{,}500.00 \\
+Backorder cost & --           & -- \\
+\midrule
+\textbf{Total cost} & \textbf{394{,}454.00} & \textbf{540{,}488.80} \\
+\bottomrule
+\end{tabular}
+\caption{Cost comparison between assignment 1a and assignment 2a}
+\end{table}
+
+\subsection{Plan used on realized demand}
+
+In part 2b, the production plan obtained in part 2a is evaluated using the realized demand instead of the forecasted demand. The production schedule remains unchanged, meaning that no re-optimization is performed. As a result, the setup cost stays identical at €145{,}500.00. The holding cost increases slightly from €394{,}988.80 to €401{,}114.80 due to deviations between forecasted and actual demand. In addition, backorder costs of €27{,}500.00 arise, indicating that the plan is not able to fully absorb demand variability under capacity constraints.
+
+The service performance of the plan can be measured through the service level and the fill rate. The service level is 96.67\%, meaning that in 29 out of the 30 weeks there is no backorder at the end of the period. The fill rate equals 98.17\%, which indicates that almost all demanded units are delivered on time. Hence, the plan performs very well in terms of service, despite being constructed under capacity limitations.
+
+Backorders only occur in week 30, where a shortage of 110 units arises. This shows that the plan is generally robust, but still vulnerable in periods where demand peaks exceed the available capacity and inventory buffers.
+
+Overall, the total cost increases from €540{,}488.80 to €574{,}114.80. Compared to assignment 1b, the backorder cost is lower, suggesting that the finite capacity plan is slightly more robust against demand fluctuations.
+
+\begin{table}[H]
+\centering
+\begin{tabular}{lrr}
+\toprule
+\textbf{Cost Comparison} & \textbf{Part 2a} & \textbf{Part 2b} \\
+\midrule
+Holding Cost   & €394{,}970.80 & €401{,}096.80 \\
+Set-Up Cost    & €145{,}500.00 & €145{,}500.00 \\
+Backorder Cost & --            & €27{,}500.00 \\
+\midrule
+\textbf{Total Cost} & \textbf{€540{,}470.80} & \textbf{€574{,}096.80} \\
+\bottomrule
+\end{tabular}
+\caption{Comparison part 2a and 2b}
+\end{table}
+
+However, shortages still occur, showing that capacity constraints limit the flexibility to respond to higher-than-expected demand.
+
+\assignmentsection{Assignment 3: Adjusting the MIP model to overtime}
+
+\subsection{Plan based on forecasted demand}
+
+In this assignment, the model from Assignment 2a is extended by introducing the possibility of overtime, also called temporary capacity expansion. Unlike the fixed capacity constraints in Assignment 2, this extension allows the company to increase capacity in specific periods at an additional cost, thereby improving flexibility.
+
+\subsubsection{Decision variables}
+
+We add two decision variables to the objective function that will represent the overtime for each workstation.
+
+\begin{itemize}
+    \item \(OT_{X,t}\): additional capacity in units for workstation X in period \(t\)
+    \item \(OT_{Y,t}\): additional capacity in hours for workstation Y in period \(t\)
+\end{itemize}
+
+\subsubsection{Parameters}
+
+\begin{itemize}
+    \item \(c_{OTX}\): €2 per additional unit of capacity for workstation X
+    \item \(c_{OTY}\): €120 per additional hour of capacity for workstation Y
+\end{itemize}
+
+\subsubsection{Objective function}
+
+\[
+\min \sum_{t=1}^{T=30} \sum_{i \in parts}
+\left(
+h_i I_{i,t}
++ S_i y_{i,t}
++ c_{OTX} OT_{X,t}
++ c_{OTY} OT_{Y,t}
+\right)
+\]
+
+\subsubsection{Constraints}
+
+Constraint 1: inventory balance constraint (1a) \\
+Constraint 2: setup constraint (1a) \\
+Constraint 3: minimum lot size constraint (1a)
+
+Constraint 4: maximum capacity adjusted with overtime for both workstations
+
+The first constraint ensures that the production of the end product \(E2801\) in each period does not exceed the available capacity of workstation X, which can be increased by using overtime units.
+
+The second constraint limits the total processing time required on workstation Y by accounting for the processing times of components \(B1401\) and \(B2302\), while allowing additional capacity through overtime expressed in minutes.
+
+\[
+x_{E2801,t} \leq 800 + OT_{X,t}
+\qquad
+\forall t \in \{1,\ldots,30\}
+\]
+
+\[
+3x_{B1401,t} + 2x_{B2302,t}
+\leq 10{,}000 + 60OT_{Y,t}
+\qquad
+\forall t \in \{1,\ldots,30\}
+\]
+
+Constraint 5: maximum overtime for both workstations
+
+These constraints ensure that the amount of overtime used at each workstation remains within the allowed limits per period. Specifically, overtime on workstation X is limited to a maximum of 300 additional units per week, while overtime on workstation Y is restricted to at most 38 extra hours per week.
+
+\[
+OT_{X,t} \leq 300
+\]
+
+\[
+OT_{Y,t} \leq 38
+\]
+
+\subsubsection{Cost comparison}
+
+The introduction of overtime reduces the total cost by approximately €19{,}000 (-3.6\%) compared to production without overtime. This reduction is driven by the increased flexibility in capacity, which allows the system to better respond to fluctuations in demand. Additionally, the need for inventory buffers is reduced, as production can be more closely aligned with demand peaks instead of relying on early production and stock buildup.
+
+\begin{table}[H]
+\centering
+\begin{tabular}{lrr}
+\toprule
+\textbf{Cost Comparison} & \textbf{Part 2a} & \textbf{Part 3a} \\
+\midrule
+Holding Cost   & €394{,}988.80 & €369{,}328.80 \\
+Set-up Cost    & €145{,}500.00 & €145{,}500.00 \\
+Backorder Cost & --            & -- \\
+Overtime Cost  & --            & €6{,}442.00 \\
+\midrule
+\textbf{Total Cost} & \textbf{€540{,}488.80} & \textbf{€521{,}270.80} \\
+\bottomrule
+\end{tabular}
+\caption{Comparison part 2a and 3a}
+\end{table}
+
+\subsection{Plan used on realized demand}
+
+\assignmentsection{Assignment 4: Adjusting the MIP model with machine expansion}
+
+In this chapter, the production planning model is extended to allow the company to permanently increase the capacity of its two workstations through machine modernisation. Unlike the overtime option explored in Assignment 3, this expansion represents a one-time capital investment that raises the capacity ceiling for every period in the planning horizon. The goal is to determine the cost-optimal level of expansion and evaluate whether the investment pays off under both forecasted and realised demand.
+
+\subsection{Plan based on forecasted demand}
+
+For Assignment 4a, we build upon the finite capacity MIP model developed in Assignment 2a, which already incorporates the production planning constraints for both workstations alongside the inventory balance, minimum lot size, and Big-M constraints. To extend this model with the possibility of permanent capacity expansion, two new decision variables and four new parameters are introduced.
+
+\subsubsection{Decision variables}
+
+\begin{itemize}
+    \item \(dx\): represents the number of additional units permanently added to the capacity of Workstation X, and is bounded between 0 and 200.
+    \item \(dy\_pct\): represents the number of 1\%-increment steps by which the capacity of Workstation Y is permanently increased, bounded between 0 and 40, corresponding to a maximum expansion of 40\%.
+\end{itemize}
+
+\subsubsection{Parameters}
+
+\begin{itemize}
+    \item \(COST^{EXP}_{X}\): €10 cost per additional unit of capacity added to Workstation X.
+    \item \(COST^{EXP}_{Y}\): €1500 cost per 1\% increment of additional capacity on Workstation Y.
+\end{itemize}
+
+\subsubsection{Objective function}
+
+The two new decision variables are independent of the period, since we determine once at the beginning how much the capacity increase will be. In our objective function, we multiply this amount of minutes with the cost per minute.
+
+\[
+\min \sum_{t=1}^{T=30} \sum_{i \in parts}
+\left(h_i I_{i,t} + S_i y_{i,t}\right)
++ COST^{EXP}_{X} \cdot dx
++ COST^{EXP}_{Y} \cdot dy\_pct
+\]
+
+\subsubsection{Constraints}
+
+Constraint 1: inventory balance constraint (1a) \\
+Constraint 2: setup constraint (1a) \\
+Constraint 3: minimum lot size constraint (1a)
+
+Constraint 4: maximum capacity
+
+The first constraint ensures that the production of the end product \(E2801\) each period does not exceed the available capacity of workstation X. The second constraint limits the total processing time required on workstation Y in each period.
+
+\[
+x_{E2801,t} \leq 800 + dx
+\qquad
+\forall t \in \{1,\ldots,30\}
+\]
+
+\[
+3x_{B1401,t} + 2x_{B2302,t}
+\leq 10{,}000 + 100 \cdot dy\_pct
+\qquad
+\forall t \in \{1,\ldots,30\}
+\]
+
+Constraint 5: maximum expansion
+
+The first constraint makes sure workstation X is limited to an expansion of 200 units and the second constraint makes sure that workstation Y is limited to a capacity increase of 40\%.
+
+\[
+0 \leq dx \leq 200
+\]
+
+\[
+0 \leq dy\_pct \leq 40
+\]
+
+\subsubsection{Cost comparison}
+
+Part 2a results in the highest total cost (€540{,}488.80) due to high holding and setup costs under strict capacity constraints. In Part 3a, allowing overtime reduces the total cost to €521{,}270.80 by lowering holding costs, although it introduces additional overtime costs. Part 4a achieves the lowest total cost (€520{,}723.30) by enabling permanent capacity expansion. Despite the added investment cost, this option further reduces holding and setup costs, making it the most cost-efficient solution overall.
+
+\begin{table}[H]
+\centering
+\begin{tabular}{lrrr}
+\toprule
+\textbf{Cost comparison} & \textbf{Part 2a} & \textbf{Part 3a} & \textbf{Part 4a} \\
+\midrule
+Holding Cost   & €394{,}988.80 & €369{,}328.80 & €364{,}253.30 \\
+Set-Up cost    & €145{,}500.00 & €145{,}500.00 & €143{,}000.00 \\
+Overtime Cost  & --            & €6{,}442.00   & -- \\
+Expansion Cost & --            & --            & €13{,}470.00 \\
+Backorder Cost & --            & --            & -- \\
+\midrule
+\textbf{Total Cost} & \textbf{€540{,}488.80} & \textbf{€521{,}270.80} & \textbf{€520{,}723.30} \\
+\bottomrule
+\end{tabular}
+\caption{Cost comparison part 2a, 3a and 4a}
+\end{table}
+
+\subsection{Plan based on realized demand}
+
+In part 4b, the production plan obtained in part 4a is evaluated using the realized demand instead of the forecasted demand. Again no re-optimization is performed. As a result, the setup cost stays identical at €143{,}000.00 and the expansion cost remains €13{,}470.00. The holding cost increases slightly from €364{,}253.30 to €370{,}457.30 due to deviations between forecasted and actual demand. In addition, backorder costs of €30{,}750.00 arise, indicating that the plan is not able to fully absorb demand variability despite the increased capacity.
+
+The service level is 93.33\%, meaning that in 28 out of the 30 weeks there is no backorder at the end of the period. The fill rate equals 97.96\%, indicating that the majority of demand is satisfied on time, although slightly less compared to previous scenarios.
+
+Backorders only occur in week 26 and week 30, where shortages of 13 and 110 units arise respectively. This shows that even with expanded capacity, the system remains vulnerable to demand peaks that exceed both capacity and available inventory buffers.
+
+Overall, the total cost increases from €520{,}723.30 to €557{,}677.30. This increase is mainly driven by the introduction of backorder costs, while setup and expansion costs remain unchanged. Compared to assignment 2b, the total cost is lower, indicating that capacity expansion helps reduce overall costs. However, shortages still occur, indicating that expansion alone is not sufficient to fully hedge against demand uncertainty.
+
+\begin{table}[H]
+\centering
+\begin{tabular}{lrr}
+\toprule
+\textbf{Cost comparison} & \textbf{Part 4a} & \textbf{Part 4b} \\
+\midrule
+Holding Cost   & €364{,}253.30 & €370{,}457.30 \\
+Set-Up cost    & €143{,}000.00 & €143{,}000.00 \\
+Overtime Cost  & --            & -- \\
+Expansion Cost & €13{,}470.00  & €13{,}470.00 \\
+Backorder Cost & --            & €30{,}750.00 \\
+\midrule
+\textbf{Total Cost} & \textbf{€520{,}723.30} & \textbf{€557{,}677.30} \\
+\bottomrule
+\end{tabular}
+\caption{Cost comparison part 4a and 4b}
+\end{table}
+
+\assignmentsection{Assignment 5: Adjusting the MIP model with overtime and machine expansion}
+
+In this assignment, the MIP model is extended by combining both overtime and permanent capacity expansion. This allows the model to choose between short-term flexibility, overtime, and long-term structural improvements, capacity expansion, or a combination of both.
+
+\subsection{Plan based on forecasted demand}
+
+The model of Part 5 is based on the model of Part 2a. Because Part 5 combines the adjustments of part 3a and 4a, a lot of things return from those models when adding the extra info to the base model.
+
+\subsubsection{Parameters}
+
+We combine the added parameters from assignment 3 and 4 and we add these to the base model from assignment 2.
+
+\begin{itemize}
+    \item \(c_{OTX}\): €2 per additional unit of capacity for workstation X
+    \item \(c_{OTY}\): €120 per additional hour of capacity for workstation Y
+    \item \(COST^{EXP}_{X}\): €10 cost per additional unit of capacity added to Workstation X
+    \item \(COST^{EXP}_{Y}\): €1500 cost per 1\% increment of additional capacity on Workstation Y
+\end{itemize}
+
+\subsubsection{Objective function}
+
+\[
+\min \sum_{t=1}^{T=30} \sum_{i \in parts}
+\left(
+h_i I_{i,t}
++ S_i y_{i,t}
++ c_{OTX} OT_{X,t}
++ c_{OTY} OT_{Y,t}
+\right)
++ COST^{EXP}_{X} \cdot dx
++ COST^{EXP}_{Y} \cdot dy\_pct
+\]
+
+\subsubsection{Constraints}
+
+Constraint 1: inventory balance constraint (1a) \\
+Constraint 2: setup constraint (1a) \\
+Constraint 3: minimum lot size constraint (1a) \\
+Constraint 4: maximum overtime (3a) \\
+Constraint 5: maximum expansion (4a)
+
+Constraint 6: maximum capacity adjusted with overtime and permanent expansion for both workstations
+
+The first constraint ensures that the production of the end product \(E2801\) in each period does not exceed the total available capacity of workstation X, which consists of the base capacity, the temporary increase through overtime \(OT_{X,t}\), and the permanent capacity expansion \(dx\).
+
+The second constraint limits the total processing time required on workstation Y by considering the processing times of components \(B1401\) and \(B2302\), while allowing capacity to be increased both temporarily through overtime \(OT_{Y,t}\) and structurally through a percentage-based expansion \(dy\_pct\).
+
+\[
+x_{E2801,t} \leq 800 + OT_{X,t} + dx
+\qquad
+\forall t \in \{1,\ldots,30\}
+\]
+
+\[
+3x_{B1401,t} + 2x_{B2302,t}
+\leq 10{,}000 + 60OT_{Y,t} + 100 \cdot dy\_pct
+\qquad
+\forall t \in \{1,\ldots,30\}
+\]
+
+\subsubsection{Cost comparison}
+
+We observe that a combination of working overtime and machine expansion decreases the total cost. Next to that, all cost types separately are lower than previous parts. This could possibly be the best production plan so far. However, ``total cost'' is not our only performance measure. In the next section, where we also take the real demand into consideration, we will also take a look at the fill rate to compare this production plan to the previous ones.
+
+\begin{table}[H]
+\centering
+\begin{tabular}{lrrrr}
+\toprule
+\textbf{Cost comparison} & \textbf{Part 2a} & \textbf{Part 3a} & \textbf{Part 4a} & \textbf{Part 5a} \\
+\midrule
+Holding Cost   & €394{,}988.80 & €369{,}328.80 & €364{,}253.30 & €354{,}296.60 \\
+Set-Up Cost    & €145{,}500.00 & €145{,}500.00 & €143{,}000.00 & €132{,}000.00 \\
+Overtime Cost  & --            & €6{,}442.00   & --            & €600.00 \\
+Expansion Cost & --            & --            & €13{,}470.00  & €23{,}180.00 \\
+Backorder Cost & --            & --            & --            & -- \\
+\midrule
+\textbf{Total Cost} & \textbf{€540{,}488.80} & \textbf{€521{,}270.80} & \textbf{€520{,}723.30} & \textbf{€510{,}076.60} \\
+\bottomrule
+\end{tabular}
+\caption{Comparison part 2a, 3a, 4a and 5a}
+\end{table}
+
+\subsection{Plan based on realized demand}
+
+In part 5b, the production plan obtained in part 5a is evaluated using the realized demand instead of the forecasted demand. The production schedule, as well as the chosen capacity expansions and overtime decisions, remain unchanged, meaning that no re-optimization is performed. As a result, the setup cost stays identical at €132{,}000.00, the expansion cost remains €23{,}180.00, and the overtime cost stays €600.00. The holding cost increases slightly from €354{,}296.60 to €360{,}656.60 due to deviations between forecasted and actual demand. In addition, backorder costs of €37{,}250.00 arise, indicating that even with both overtime and permanent capacity expansion, the plan cannot fully absorb demand variability.
+
+The service performance of the plan can be measured through the service level and the fill rate. The service level is 93.33\%, meaning that in 28 out of the 30 weeks there is no backorder at the end of the period. The fill rate equals 97.52\%, which indicates that 5{,}868 out of 6{,}017 demanded units are delivered on time. Hence, the plan performs well, but slightly worse compared to some previous scenarios in terms of service robustness.
+
+Backorders only occur in week 26 and week 30, where shortages of 39 and 110 units arise respectively. This shows that even with the combination of overtime and capacity expansion, the system remains sensitive to peak demand periods where available capacity and inventory buffers are insufficient.
+
+Overall, the total cost increases from €510{,}076.60 to €553{,}686.60. This increase is mainly driven by the introduction of backorder costs, while setup, expansion, and overtime costs remain unchanged.
+
+Compared with assignment 4b, the total cost is slightly lower, indicating that combining overtime with expansion improves cost efficiency. However, the presence of backorders shows that even this more flexible strategy does not fully eliminate the impact of demand uncertainty.
+
+\begin{table}[H]
+\centering
+\begin{tabular}{lrr}
+\toprule
+\textbf{Cost comparison} & \textbf{Part 5a} & \textbf{Part 5b} \\
+\midrule
+Holding Cost   & €354{,}296.60 & €360{,}656.60 \\
+Set-Up Cost    & €132{,}000.00 & €132{,}000.00 \\
+Overtime Cost  & €600.00       & €600.00 \\
+Expansion Cost & €23{,}180.00  & €23{,}180.00 \\
+Backorder Cost & --            & €37{,}250.00 \\
+\midrule
+\textbf{Total Cost} & \textbf{€510{,}076.60} & \textbf{€553{,}686.60} \\
+\bottomrule
+\end{tabular}
+\caption{Cost comparison part 5a and 5b}
+\end{table}
 
 \end{document}
