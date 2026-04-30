@@ -1038,27 +1038,41 @@ However, applying Holt's method to this problem is not appropriate for two reaso
 
 Although demand uncertainty was the primary focus of this project, a production system faces many additional sources of uncertainty. A useful theoretical lens is the Variability Law: increasing variability always degrades system performance, and since variability propagates through the production chain, reduction efforts should be placed as early as possible. The Buffering Law adds that any system facing variability must be buffered by some combination of inventory, capacity, and time. The models developed in Assignments 1 to 5 rely primarily on inventory as a buffer.
 
+\vspace{0.5em}
 \textbf{Process uncertainty}
 
 A relevant internal source of uncertainty arises from product and process complexity. In this case, E2801 has a multi-level bill of materials involving seven distinct parts across three production levels, requiring multiple coordinated assembly steps. Each additional step introduces its own variability, and since these steps are sequentially dependent, delays or errors at one level propagate directly to the next. This risk is present across all assignments, but is most consequential in Assignments 1 and 2, where no capacity buffer exists to absorb disruptions. Reducing the number of components or simplifying the BOM structure would shorten lead times and decrease the probability of cascading errors, thereby lowering overall system variability.
 
 Additionally, setup operations contribute to variability, as each setup introduces uncertainty in effective processing time. While fewer setups reduce setup costs, larger batch sizes may increase variability propagation, illustrating a trade-off between cost efficiency and operational robustness.
 
+\vspace{0.5em}
 \textbf{Capacity uncertainty}
 
 Capacity uncertainty arises when available workstation capacity deviates from assumed levels due to machine outages or operational disruptions. In Assignment 2, both workstations operate at fixed capacity with no flexibility, making the system fully exposed to this risk. Assignments 3 and 5 partially mitigate this through overtime flexibility, which acts as a capacity buffer when disruptions occur. Assignments 4 and 5 go further by permanently expanding capacity, lowering baseline utilization and thereby reducing the nonlinear impact of outages.
 
 Introducing rework processes or improving maintenance policies could further reduce the impact of capacity losses by shortening recovery times and stabilizing effective capacity levels.
 
+\vspace{0.5em}
 \textbf{Lead time uncertainty}
 
 Lead time uncertainty arises when the actual time between ordering and receiving components deviates from assumed fixed values, due to supplier delays, transportation problems, or other disruptions. In this model, all lead times are treated as deterministic across all assignments. However, even modest variation in the lead time of critical components such as B4702 (5 periods) could prevent V6302 production from starting on time, propagating directly to E2801.
 
 None of the models include a safety lead time buffer for purchased components, meaning this risk remains unmitigated across Assignments 1 to 5. Incorporating lead time buffers or working with more reliable suppliers would reduce both the average lead time and its variability, improving system robustness.
 
+\vspace{0.5em}
 \textbf{Supply-side uncertainty}
 
 Beyond the modeled uncertainties, supply-side disruptions such as supplier reliability issues, quality defects, or yield losses can further impact system performance. Yield losses and rework reduce effective throughput below nominal capacity, tightening bottlenecks and potentially generating shortages that safety stock alone cannot absorb. This highlights the importance of combining different types of buffers (inventory, capacity, and time) rather than relying on a single mechanism.
+
+\assignmentsection{References}
+
+Limère, V. (2026a). Production planning \& group project [Lecture slides, Advanced Production Management, Ghent University].
+
+Graves, S. C. (1999). \textit{Manufacturing planning and control} (Working paper). Massachusetts Institute of Technology.
+
+Limère, V. (2026b). Inventory control -- deterministic [Lecture slides, Advanced Production Management, Ghent University].
+
+Limère, V. (2026c). Inventory management: Stochastic demand [Lecture slides, Advanced Production Management, Ghent University].
 
 \assignmentsection{Appendix}
 
