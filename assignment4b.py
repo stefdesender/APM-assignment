@@ -228,7 +228,7 @@ cost_rows = [
 for r, (label, val, bold) in enumerate(cost_rows, start=3):
     ws.row_dimensions[r].height = 16
     plain(ws.cell(r, 2), label, size=9, color="555555")
-    fmt = '"+"€"#,##0.00;"-"€"#,##0.00' if label == "Difference" else '"€"#,##0.00'
+    fmt = '€ #.##0,00;-€ #.##0,00' if label == "Difference" else '€ #.##0,00'
     plain(ws.cell(r, 3), round(val, 2), bold=bold, size=9, fmt=fmt)
     ws.merge_cells(f"C{r}:{get_column_letter(last_col)}{r}")
 
