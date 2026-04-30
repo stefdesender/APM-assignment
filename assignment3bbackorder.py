@@ -171,7 +171,7 @@ except Exception:
 
 # ── Write to OUTPUT.xlsx ───────────────────────────────────────────────────
 OUTPUT_FILE = "OUTPUT.xlsx"
-SHEET_NAME  = "Output_3b"
+SHEET_NAME  = "Output_3b_full_backorder"
 
 if os.path.exists(OUTPUT_FILE):
     wb = load_workbook(OUTPUT_FILE)
@@ -220,7 +220,7 @@ last_col = T + 2
 # ── Title ──────────────────────────────────────────────────────────────────
 ws.row_dimensions[1].height = 26
 ws.merge_cells(f"B1:{get_column_letter(last_col)}1")
-plain(ws.cell(1, 2), "Assignment 3b - Realized demand evaluation (finite capacity + overtime)", bold=True, size=13)
+plain(ws.cell(1, 2), "Assignment 3b - Realized demand evaluation (backorders)", bold=True, size=13)
 
 # ── Cost summary ───────────────────────────────────────────────────────────
 ws.row_dimensions[2].height = 4

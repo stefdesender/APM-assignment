@@ -14,9 +14,12 @@
 \usepackage{pgfplots}
 \pgfplotsset{compat=1.18}
 
+\setlength{\abovedisplayskip}{6pt}
+\setlength{\belowdisplayskip}{6pt}
+\setlength{\abovedisplayshortskip}{4pt}
+\setlength{\belowdisplayshortskip}{4pt}
 \setlength{\emergencystretch}{3em}
 \setlength{\parindent}{0pt}
-\setlength{\parskip}{0.6em}
 
 \newcommand{\assignmentsection}[1]{%
   \refstepcounter{section}%
@@ -55,7 +58,7 @@ Students:\quad Group A\\[0.5em]
 \clearpage
 
 \pagenumbering{gobble}
-\newgeometry{left=1.8cm,right=1.8cm,top=2.0cm,bottom=2.0cm}
+\newgeometry{left=1.5cm,right=1.5cm,top=1.8cm,bottom=1.8cm}
 \tableofcontents
 \clearpage
 
@@ -231,7 +234,7 @@ Backorder cost & --         & €46{,}750  \\
 
 \assignmentsection{Assignment 2: Adjusting the MIP model with finite production capacity}
 
-The objective of assignment 2 is to extend the model from assignment 1 by incorporating finite production capacity. In contrast to assignment 1, where production capacity was assumed to be unlimited, the production system is now constrained by the availability of two workstations. This makes the model more realistic, since production decisions are no longer only driven by setup and holding costs, but also by the limited weekly capacity of the production environment.
+The objective of assignment 2 is to extend the model from assignment 1 by incorporating finite production capacity. In contrast to assignment 1, where production capacity was assumed to be unlimited, the production system is now constrained by the availability of two workstations.
 
 \subsection{Plan based on forecasted demand}
 
@@ -264,10 +267,11 @@ The corresponding capacity constraint for workstation Y is:
 The complete model for assignment 2a is therefore the model from assignment 1a, extended with constraints (4) and (5). These capacity constraints restrict the timing of production and prevent the optimizer from producing arbitrarily large batches in a single period.
 
 \subsubsection{Cost comparison}
+Compared with assignment 1a, the introduction of finite production capacity leads to a significant increase in total cost, rising from €394{,}454.00 to €540{,}488.80. This increase is primarily driven by a substantial rise in setup costs, which grow from €79{,}500.00 to €145{,}500.00 (+83\%). Under capacity limitations, the model can no longer concentrate production in a few large batches during the most cost-efficient periods. Instead, production must be spread over more periods, resulting in smaller and more frequent production runs and therefore more setups.
 
-Compared with assignment 1a, the finite-capacity model leads to a higher total cost. The total cost increases from €394{,}454.00 to €540{,}488.80. This increase is mainly caused by a higher setup cost, which rises from €79{,}500.00 to €145{,}500.00. Under limited capacity, the model can no longer always produce large batches in the most cost-efficient periods. Instead, production must be spread over more periods, resulting in more production runs and therefore more setups.
+In addition, holding costs increase from €314{,}954.00 to €394{,}988.80 (+25.4\%). This is because capacity constraints force production to occur earlier than in the infinite-capacity case, leading to higher inventory levels that must be carried over time.
 
-The holding cost also increases from €314{,}954.00 to €394{,}988.80. This indicates that the capacity restrictions force some products to be produced earlier than in the infinite-capacity case, causing more inventory to be carried over time. Hence, the finite-capacity model is more realistic, but it comes at a higher cost because production flexibility is reduced.
+Overall, the inclusion of capacity constraints reduces production flexibility, which increases both setup and holding costs. Although this results in a higher total cost, it produces a more realistic and operationally feasible production plan.
 
 \begin{table}[H]
 \centering
@@ -461,6 +465,7 @@ OT_{Y,t} \leq 38
 \subsubsection{Cost comparison}
 
 The introduction of overtime reduces the total cost by approximately €19{,}000 (-3.6\%) compared to production without overtime. This reduction is driven by the increased flexibility in capacity, which allows the system to better respond to fluctuations in demand. Additionally, the need for inventory buffers is reduced, as production can be more closely aligned with demand peaks instead of relying on early production and stock buildup.
+Additionally, note that the Gurobi optimizer also identified an alternative optimal solution with the same total cost. This solution differs slightly in the distribution between holding costs and overtime costs, reflecting a different production schedule. However, since the total cost remains identical, we retain this solution.
 
 \begin{table}[H]
 \centering
@@ -579,6 +584,8 @@ This scenario requires an important operational assumption. It assumes that the 
 Under this assumption, the remaining overtime capacity is sufficient to absorb the demand deviations. The model can eliminate all backorders by using additional overtime, resulting in a service level and fill rate of 100\%. In this sensitivity scenario, the total cost equals €538{,}767.00. This is higher than the forecast-based 3a cost of €521{,}270.80, but lower than the fixed-plan realized-demand evaluation in 3b, which resulted in a total cost of €561{,}552.80. The improvement is mainly caused by eliminating the €34{,}000.00 backorder cost, while only €442.00 of overtime cost is required.
 
 This indicates that overtime capacity has value not only as a planned capacity expansion, but also as a short-term flexibility buffer against demand uncertainty. Nevertheless, this interpretation depends strongly on the assumption that overtime decisions can still be adjusted after demand becomes known. If overtime must be fixed in advance together with the production plan, then the original 3b evaluation remains the more realistic comparison.
+
+For a more detailed insight into the results, we refer to the Excel file \texttt{OUTPUT.xlsx}.
 
 \assignmentsection{Assignment 4: Adjusting the MIP model with machine expansion}
 
@@ -734,6 +741,8 @@ Overall, the total cost increases from €520{,}723.30 to €557{,}677.30. This 
 
 \begin{table}[H]
 \centering
+\begin{minipage}[c]{0.44\textwidth}
+\centering
 \begin{tabular}{lrr}
 \toprule
 \textbf{Cost comparison} & \textbf{Part 4a} & \textbf{Part 4b} \\
@@ -747,6 +756,36 @@ Backorder Cost & --            & €30{,}750.00 \\
 \textbf{Total Cost} & \textbf{€520{,}723.30} & \textbf{€557{,}677.30} \\
 \bottomrule
 \end{tabular}
+\end{minipage}
+\hspace{0.06\textwidth}
+\begin{minipage}[c]{0.44\textwidth}
+\centering
+\textbf{Cost comparison}
+
+\vspace{0.3em}
+\begin{tikzpicture}
+\begin{axis}[
+    height=4cm,
+    width=\textwidth,
+    ymin=500000,
+    ymax=580000,
+    xtick={1,2},
+    xticklabels={Part 4a, Part 4b},
+    ylabel={Total cost (€)},
+    grid=both,
+    scaled y ticks=false,
+    yticklabel style={
+        /pgf/number format/fixed,
+        /pgf/number format/1000 sep={,}
+    }
+]
+\addplot+[mark=*] coordinates {
+    (1,520723.30)
+    (2,557677.30)
+};
+\end{axis}
+\end{tikzpicture}
+\end{minipage}
 \caption{Cost comparison part 4a and 4b}
 \end{table}
 
@@ -793,15 +832,16 @@ Constraint 5: maximum expansion (4a)
 
 Constraint 6: maximum capacity adjusted with overtime and permanent expansion for both workstations
 
-The first constraint ensures that the production of the end product \(E2801\) in each period does not exceed the total available capacity of workstation X, which consists of the base capacity, the temporary increase through overtime \(OT_{X,t}\), and the permanent capacity expansion \(dx\).
-
-The second constraint limits the total processing time required on workstation Y by considering the processing times of components \(B1401\) and \(B2302\), while allowing capacity to be increased both temporarily through overtime \(OT_{Y,t}\) and structurally through a percentage-based expansion \(dy\_pct\).
+This first new constraint ensures that the production of the end product \(E2801\) in each period does not exceed the total available capacity of workstation X, which consists of the base capacity, the temporary increase through overtime \(OT_{X,t}\), and the permanent capacity expansion \(dx\).
 
 \[
 x_{E2801,t} \leq 800 + OT_{X,t} + dx
 \qquad
 \forall t \in \{1,\ldots,30\}
 \]
+
+
+The second constraint limits the total processing time required on workstation Y by considering the processing times of components \(B1401\) and \(B2302\), while allowing capacity to be increased both temporarily through overtime \(OT_{Y,t}\) and structurally through a percentage-based expansion \(dy\_pct\).
 
 \[
 3x_{B1401,t} + 2x_{B2302,t}
@@ -812,10 +852,13 @@ x_{E2801,t} \leq 800 + OT_{X,t} + dx
 
 \subsubsection{Cost comparison}
 
-We observe that a combination of working overtime and machine expansion decreases the total cost. Next to that, all cost types separately are lower than previous parts. This could possibly be the best production plan so far. However, ``total cost'' is not our only performance measure. In the next section, where we also take the real demand into consideration, we will also take a look at the fill rate to compare this production plan to the previous ones.
+We observe that a combination of working overtime and machine expansion decreases the total cost. Next to that, all cost types separately are lower than previous parts. This could possibly be the best production plan so far. However, ``total cost'' is not our only performance measure. In part 5b, where we also take the real demand into consideration, we will also take a look at the fill rate to compare this production plan to the previous ones.
 
 \begin{table}[H]
 \centering
+\begin{minipage}[c]{0.52\textwidth}
+\centering
+\resizebox{\linewidth}{!}{
 \begin{tabular}{lrrrr}
 \toprule
 \textbf{Cost comparison} & \textbf{Part 2a} & \textbf{Part 3a} & \textbf{Part 4a} & \textbf{Part 5a} \\
@@ -829,6 +872,42 @@ Backorder Cost & --            & --            & --            & -- \\
 \textbf{Total Cost} & \textbf{€540{,}488.80} & \textbf{€521{,}270.80} & \textbf{€520{,}723.30} & \textbf{€510{,}076.60} \\
 \bottomrule
 \end{tabular}
+}
+\end{minipage}
+\hspace{0.03\textwidth}
+\begin{minipage}[c]{0.40\textwidth}
+\centering
+\textbf{Cost comparison}
+
+\vspace{0.3em}
+\begin{tikzpicture}
+\begin{axis}[
+    height=4cm,
+    width=\textwidth,
+    ymin=500000,
+    ymax=550000,
+    ybar,
+    bar width=12pt,
+    xtick=data,
+    xticklabels={Part 2a, Part 3a, Part 4a, Part 5a},
+    ylabel={Total cost (€)},
+    grid=both,
+    scaled y ticks=false,
+    yticklabel style={
+        /pgf/number format/fixed,
+        /pgf/number format/1000 sep={,}
+    },
+    x tick label style={rotate=25, anchor=east}
+]
+\addplot coordinates {
+    (1,540488.80)
+    (2,521270.80)
+    (3,520723.30)
+    (4,510076.60)
+};
+\end{axis}
+\end{tikzpicture}
+\end{minipage}
 \caption{Comparison part 2a, 3a, 4a and 5a}
 \end{table}
 
@@ -846,6 +925,8 @@ Compared with assignment 4b, the total cost is slightly lower, indicating that c
 
 \begin{table}[H]
 \centering
+\begin{minipage}[c]{0.44\textwidth}
+\centering
 \begin{tabular}{lrr}
 \toprule
 \textbf{Cost comparison} & \textbf{Part 5a} & \textbf{Part 5b} \\
@@ -859,10 +940,125 @@ Backorder Cost & --            & €37{,}250.00 \\
 \textbf{Total Cost} & \textbf{€510{,}076.60} & \textbf{€553{,}686.60} \\
 \bottomrule
 \end{tabular}
+\end{minipage}
+\hspace{0.06\textwidth}
+\begin{minipage}[c]{0.44\textwidth}
+\centering
+\textbf{Cost comparison}
+
+\vspace{0.3em}
+\begin{tikzpicture}
+\begin{axis}[
+    height=4cm,
+    width=\textwidth,
+    ymin=480000,
+    ymax=570000,
+    xtick={1,2},
+    xticklabels={Part 5a, Part 5b},
+    ylabel={Total cost (€)},
+    grid=both,
+    scaled y ticks=false,
+    yticklabel style={
+        /pgf/number format/fixed,
+        /pgf/number format/1000 sep={,}
+    }
+]
+\addplot+[mark=*] coordinates {
+    (1,510076.60)
+    (2,553686.60)
+};
+\end{axis}
+\end{tikzpicture}
+\end{minipage}
 \caption{Cost comparison part 5a and 5b}
 \end{table}
 
 \assignmentsection{Assignment 6:  Adjusting the MIP model with creative ideas}
+
+
+Starting from the model in Part 5, we sought ways to enhance its performance using real demand data, particularly in managing the disparity between forecasted and realized demand, or uncertainty.
+
+\subsection{6a. Ideas to improve performance and reduce uncertainty}
+
+\textbf{Idea 1: Working with a safety stock}
+
+To account for demand uncertainty, a safety stock was introduced for the end product. In the previous assignments, the production plan was optimized based on forecasted demand only. However, as observed in the dataset, the realized demand deviates from the forecast, which may lead to stockouts and consequently backorder costs. To mitigate this risk, a safety stock policy was implemented.
+
+The safety stock level was determined using a standard statistical approach based on forecast errors. First, the forecast error per period was calculated as the difference between realized and forecasted demand. The standard deviation of these errors ($\sigma_e$) was then computed to quantify the variability in demand. Since the system operates with a lead time $L = 1$ period and a weekly review period $R = 1$, the relevant uncertainty window equals $L + R = 2$ periods. Therefore, the standard deviation over the lead time demand was calculated as:
+
+\[
+\sigma_{LTD} = \sigma_e \cdot \sqrt{L + R}
+\]
+
+To achieve a target cycle service level of 95\%, a safety factor $z = 1.65$ was used. The safety stock was then computed as:
+
+\[
+SS = z \cdot \sigma_{LTD}
+\]
+
+Finally, the resulting value was rounded up to the nearest multiple of 10 units to ensure compatibility with the minimum lot size constraints in the model.
+
+This safety stock was incorporated into the MIP model as a lower bound on the inventory of the end product in each period:
+
+\[
+I_{E2801,t} \geq SS 
+\qquad \forall t \in \{1,\ldots,30\}
+\]
+
+By enforcing this constraint, the model is forced to maintain a buffer against demand variability, which shifts production earlier in time and reduces the likelihood of stockouts when realized demand exceeds the forecast.
+
+Compared to the forecasted demand model without safety stock, this approach typically leads to higher holding costs due to the additional inventory. However, under realized demand, safety stock effectively buffers against demand variability, significantly reducing backorders and their associated costs. Given the relatively high backorder cost in this problem setting, maintaining a safety stock is economically justified and results in a more robust production plan under uncertainty.
+
+\begin{table}[H]
+\centering
+\begin{tabular}{lccccc}
+\toprule
+\textbf{Design} & \textbf{Safety Stock} & \textbf{Total Costs (forecast)} & \textbf{Total Costs (realized)} & \textbf{\# backorder} & \textbf{service level} \\
+\midrule
+Part 5 & (No) & €510{,}076.60 & €553{,}686.60 & 149 & 93.33\% \\
+1      & €55  & €520{,}462.60 & €538{,}728.60 & 50  & 96.7\% \\
+\bottomrule
+\end{tabular}
+\caption{Adding safety stock}
+\end{table}
+
+\textbf{Idea 2: Outsourcing production}
+
+\textbf{Idea 3: Double exponential smoothing for demand forecasting}
+
+One candidate forecasting method to handle demand uncertainty is Holt's method (double exponential smoothing), which extends simple exponential smoothing by maintaining two smoothing equations: one for the level of the series ($S_t$) and one for the trend ($G_t$), controlled by two smoothing constants $\alpha$ and $\beta$ respectively. The $\tau$-step-ahead forecast is then given by $F_{t,t+\tau} = S_t + \tau G_t$, making it well-suited for data exhibiting a linear trend.
+
+However, applying Holt's method to this problem is not appropriate for two reasons. First, the method requires historical demand data prior to the planning horizon to reliably initialize $S_0$ and $G_0$, typically through linear regression. This is data that is not available here, as the dataset only covers weeks 1 through 30 with no preceding observations. Second, inspecting the realized demand reveals no clear linear trend; demand fluctuates around a relatively stable mean, making the trend component unnecessary. For these reasons, simpler and more robust approaches are better suited to address the uncertainty between forecasted and realized demand in this setting.
+
+\textbf{Idea 4: Increasing the number of periods in the planning horizon}
+
+\subsection{Conclusion 6a}
+
+\subsection{6b. Other sources of uncertainty}
+
+Although demand uncertainty was the primary focus of this project, a production system faces many additional sources of uncertainty. A useful theoretical lens is the Variability Law: increasing variability always degrades system performance, and since variability propagates through the production chain, reduction efforts should be placed as early as possible. The Buffering Law adds that any system facing variability must be buffered by some combination of inventory, capacity, and time. The models developed in Assignments 1 to 5 rely primarily on inventory as a buffer.
+
+\textbf{Process uncertainty}
+
+A relevant internal source of uncertainty arises from product and process complexity. In this case, E2801 has a multi-level bill of materials involving seven distinct parts across three production levels, requiring multiple coordinated assembly steps. Each additional step introduces its own variability, and since these steps are sequentially dependent, delays or errors at one level propagate directly to the next. This risk is present across all assignments, but is most consequential in Assignments 1 and 2, where no capacity buffer exists to absorb disruptions. Reducing the number of components or simplifying the BOM structure would shorten lead times and decrease the probability of cascading errors, thereby lowering overall system variability.
+
+Additionally, setup operations contribute to variability, as each setup introduces uncertainty in effective processing time. While fewer setups reduce setup costs, larger batch sizes may increase variability propagation, illustrating a trade-off between cost efficiency and operational robustness.
+
+\textbf{Capacity uncertainty}
+
+Capacity uncertainty arises when available workstation capacity deviates from assumed levels due to machine outages or operational disruptions. In Assignment 2, both workstations operate at fixed capacity with no flexibility, making the system fully exposed to this risk. Assignments 3 and 5 partially mitigate this through overtime flexibility, which acts as a capacity buffer when disruptions occur. Assignments 4 and 5 go further by permanently expanding capacity, lowering baseline utilization and thereby reducing the nonlinear impact of outages.
+
+Introducing rework processes or improving maintenance policies could further reduce the impact of capacity losses by shortening recovery times and stabilizing effective capacity levels.
+
+\textbf{Lead time uncertainty}
+
+Lead time uncertainty arises when the actual time between ordering and receiving components deviates from assumed fixed values, due to supplier delays, transportation problems, or other disruptions. In this model, all lead times are treated as deterministic across all assignments. However, even modest variation in the lead time of critical components such as B4702 (5 periods) could prevent V6302 production from starting on time, propagating directly to E2801.
+
+None of the models include a safety lead time buffer for purchased components, meaning this risk remains unmitigated across Assignments 1 to 5. Incorporating lead time buffers or working with more reliable suppliers would reduce both the average lead time and its variability, improving system robustness.
+
+\textbf{Supply-side uncertainty}
+
+Beyond the modeled uncertainties, supply-side disruptions such as supplier reliability issues, quality defects, or yield losses can further impact system performance. Yield losses and rework reduce effective throughput below nominal capacity, tightening bottlenecks and potentially generating shortages that safety stock alone cannot absorb. This highlights the importance of combining different types of buffers (inventory, capacity, and time) rather than relying on a single mechanism.
 
 \assignmentsection{Appendix}
 
