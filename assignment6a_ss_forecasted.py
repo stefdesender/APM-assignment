@@ -241,7 +241,12 @@ output = {
         for i in PARTS
     },
 }
+<<<<<<< Updated upstream
 
+=======
+with open(OUTPUT_FILE, "w") as f:
+    json.dump(output, f, indent=2)
+>>>>>>> Stashed changes
 # ── Excel output (forecasted) ────────────────────────────────────────────
 from openpyxl import Workbook, load_workbook
 from openpyxl.styles import Font, PatternFill, Alignment, Border, Side

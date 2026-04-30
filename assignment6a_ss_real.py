@@ -241,7 +241,12 @@ output = {
         for i in PARTS
     },
 }
+<<<<<<< Updated upstream
 
+=======
+with open(OUTPUT_FILE, "w") as f:
+    json.dump(output, f, indent=2)
+>>>>>>> Stashed changes
 
 # ── Console summary ────────────────────────────────────────────────────────
 print(f"\nResults written to {OUTPUT_FILE}")
