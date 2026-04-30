@@ -18,7 +18,6 @@
 \setlength{\parindent}{0pt}
 \setlength{\parskip}{0.6em}
 
-% Sections appear unnumbered in the text, but still define numbering for subsections
 \newcommand{\assignmentsection}[1]{%
   \refstepcounter{section}%
   \section*{#1}%
@@ -54,9 +53,14 @@ Students:\quad Group A\\[0.5em]
 
 \maketitle
 \clearpage
-\newgeometry{margin=2.54cm}
+
+\pagenumbering{gobble}
+\newgeometry{left=1.8cm,right=1.8cm,top=2.0cm,bottom=2.0cm}
 \tableofcontents
 \clearpage
+
+\pagenumbering{arabic}
+\setcounter{page}{1}
 
 \introsection{Introduction to the case}
 
@@ -75,9 +79,9 @@ This project focuses on optimizing production planning in a multi-stage manufact
 
 \subsubsection{Parameters}
 
-The model covers a planning horizon of \(T = 30\) periods (weeks). Each part \(i\) has a lead time \(LT_i\), representing the number of periods between placing and receiving an order. A minimum lot size \(L_i\) enforces that whenever a part is ordered, at least a certain quantity must be produced or purchased. The beginning inventory \(I_{i,0}\) gives the stock on hand at the start of the planning horizon. Holding costs \(h_i\) are charged per unit per week for carrying inventory, while setup costs \(S_i\) are incurred each time an order is placed. Finally, \(FD_{i,t}\) represents the forecasted demand for part \(i\) in period \(t\), and \(RD_{i,t}\) the realized demand.
+The model covers $T = 30$ periods (weeks). Each part $i$ has a lead time $LT_i$ (periods between placing and receiving an order), a minimum lot size $L_i$ (minimum quantity per order) and a beginning inventory $I_{i,0}$ (initial stock at the start of the horizon). Holding costs $h_i$ apply per unit per week, while setup costs $S_i$ are incurred per order placement. Finally, $FD_{i,t}$ and $RD_{i,t}$ represent respectively the forecasted and realized demand for part $i$ in period $t$.
 
-While the forecasted and realized demand \((FD_{i,t}\) and \(RD_{i,t})\) for the end product \((E2801)\) are externally driven, the demand for its underlying components is derived from the production schedule of the parent item.
+While the forecasted and realized demand for the end product ($E2801$) are externally driven, component demand (V1501, V6302, B1401, \ldots) is derived internally from the production schedule of their parent item. Component gross requirements are determined by the Planned Order Releases of the parent, multiplied by the Bill of Materials (BOM) factor. This demand occurs one lead time period before the parent is completed, creating a cascading effect throughout the BOM: as soon as a parent part enters production, the required components are immediately withdrawn from inventory.
 
 \begin{table}[H]
 \centering
@@ -100,13 +104,7 @@ $RD_{i,t}$ & realized demand of part $i$ in period $t$ \\
 
 \subsubsection{Decision variables}
 
-The model contains three decision variables for each part \(i\) and period \(t\).
-
-The first is \(x_{i,t}\), representing the number of units of part \(i\) ordered or produced in period \(t\). This is a continuous non-negative variable, meaning it can take any value of zero or above.
-
-The second is \(y_{i,t}\), a binary variable equal to 1 if an order or production run is initiated for part \(i\) in period \(t\), and 0 otherwise. This variable is what links the setup cost to the ordering decision. A setup cost \(S_i\) is only incurred when \(y_{i,t}=1\).
-
-The third is \(I_{i,t}\), representing the inventory level of part \(i\) at the end of period \(t\). This is again a continuous non-negative variable, reflecting the stock on hand after all receipts and withdrawals in period \(t\) have been processed. A holding cost \(h_i\) is charged per unit remaining in inventory at the end of each period.
+Three decision variables are defined for each part $i$ and period $t$. The first, $x_{i,t}$, represents the units ordered or produced, and is continuous and non-negative. The second is $y_{i,t}$, is binary, equaling 1 when an order is initiated for part $i$ in period $t$, thereby incurring setup cost $S_i$. The third, $I_{i,t}$, is a non-negative integer representing the inventory level of part $i$ at the end of period $t$, after all receipts and withdrawals in period $t$ have been processed. A holding cost $h_i$ is charged per remaining unit in inventory at the end of each period.
 
 \[
 x_{i,t} = \text{number of units of part } i \text{ ordered in period } t
@@ -126,11 +124,9 @@ I_{i,t} = \text{inventory (units) of part } i \text{ in period } t
 
 \subsubsection{Model}
 
-The objective function minimizes the total cost over the planning horizon of 30 weeks across all parts. It consists of two cost components.
+The objective function minimizes the total cost over 30 weeks across all parts consisting of two cost components.
 
-The first is the holding cost \(h_i \cdot I_{i,t}\), charged for every unit of part \(i\) remaining in inventory at the end of period \(t\). The second is the setup cost \(S_i \cdot y_{i,t}\), incurred every time a production run or order is initiated for part \(i\) in period \(t\). Something to notice is that no production cost is included, since all demand must be fulfilled and the total quantity to be produced is therefore fixed regardless of timing. The production cost would be the same for every feasible solution and would therefore not affect which solution Gurobi picks as optimal.
-
-The core trade-off the model faces is a classic one in production planning: producing in large infrequent lots saves on setup costs but leads to more inventory being held, while producing in smaller and more frequent lots keeps inventory low but means paying more setup costs. The optimizer finds the sweet spot between these two competing forces.
+The first is the holding cost \(h_i \cdot I_{i,t}\), charged for every unit of part \(i\) remaining in inventory at the end of period \(t\). The second is the setup cost \(S_i \cdot y_{i,t}\), incurred every time a production run or order is initiated for part \(i\) in period \(t\). No production cost is included since total quantity is fixed regardless of timing, it would be identical across all feasible solutions and therefore does not affect the optimal solution. The model faces a classic trade-off: large infrequent lots save on setup costs but increase inventory, while small frequent lots do the opposite. The optimizer finds the balance between these two forces.
 
 \[
 \min \sum_{t=1}^{T=30} \sum_{i \in parts}
@@ -139,48 +135,39 @@ The core trade-off the model faces is a classic one in production planning: prod
 
 \subsubsection{Constraints}
 
-The model has three main constraints.
+The model has four sets of constraints.
 
-The inventory balance constraint ensures that the stock at the end of each period is consistent with what was available before, what arrived, and what was consumed. The stock of part \(i\) at the end of period \(t\) equals the stock from the previous period, plus any order placed \(LT_i\) periods earlier that arrives in period \(t\), minus the forecasted demand \(FD_{i,t}\) in that period. When \(t-LT_i<1\), no order could have been placed within the planning horizon, so the receipt term drops out and inventory simply decreases by the demand of that period.
-
-\begin{align}
-I_{i,t} &= I_{i,t-1} + x_{i,t-LT_i} - FD_{i,t}
-&& \forall i,t
-\tag{1}
-\end{align}
+The inventory balance constraint ensures that end-of-period stock is consistent with what was available before, what arrived, and what was consumed. End-of-period stock for part $i$ equals the stock from the previous period, plus any order $x_{i,t-LT_i}$ placed $LT_i$ periods earlier (so arrives in period $t$), minus the forecasted demand $FD_{i,t}$. When $t - LT_i < 1$, no order placed within the planning horizon could have arrived yet, so $x_{i,t-LT_i}$ drops out.
 
 \[
-\text{if } t - LT_i < 1 \Rightarrow x_{i,t}=0
-\Rightarrow I_{i,t} = I_{i,t-1} - FD_{i,t}
+I_{i,t} = I_{i,t-1} + x_{i,t-LT_i} - FD_{i,t}
 \]
 
-The second constraint links ordering quantity to the setup variable. A quantity can only be produced or ordered if a setup takes place, enforced by \(x_{i,t} \leq M y_{i,t}\). If \(y_{i,t}=0\), then \(x_{i,t}\) is forced to zero, and if \(y_{i,t}=1\), then production is allowed up to the big-\(M\) upper bound. The value of \(M\) was set to 25 times the total forecasted demand over all 30 periods. The highest BOM multiplier in the system is 21, which applies to \(B4702\) (3 units of \(V6302\) per \(E2801\), times 7 units of \(B4702\) per \(V6302\)). A factor of 25 was chosen to add a small safety margin on top of this, ensuring \(M\) is never restrictive for any part. Note that \(M\) could also be made part-specific, using the exact BOM multiplier per part rather than a uniform upper bound, which would give tighter bounds and potentially improve solver performance.
+\[
+\text{if } t - LT_i < 1 \Rightarrow x_{i,t} = 0 \Rightarrow I_{i,t} = I_{i,t-1} - FD_{i,t}
+\]
 
-\begin{align}
-x_{i,t} &\leq M y_{i,t}
-&& \forall i,t
-\tag{2}
-\end{align}
+The second constraint links ordering quantity to the setup variable: production is only allowed when a setup takes place, enforced by $x_{i,t} \leq M \cdot y_{i,t}$. If $y_{i,t} = 0$, then $x_{i,t}$ is forced to zero; if $y_{i,t} = 1$, production is allowed up to big M. The value of the big M was set to 25 times the total forecasted demand over all 30 periods, slightly above the highest BOM multiplier in the system (21, or $3 \cdot 7$, for B4702), ensuring M is never restrictive for any part. Note that M could also be made part-specific, using the exact BOM multiplier per part giving tighter bounds and potentially improve solver performance.
 
-The third constraint enforces the minimum lot size. Whenever an order is placed, at least \(L_i\) units must be ordered. This reflects real-world supplier or production requirements, where ordering below a certain quantity is simply not possible. Together the second and third constraint ensure that \(x_{i,t}\) is either exactly zero or somewhere between \(L_i\) and \(M\), with a setup cost charged whenever the latter is the case.
+\[
+x_{i,t} \leq M y_{i,t}
+\]
 
-\begin{align}
-x_{i,t} &\geq L_i y_{i,t}
-&& \forall i,t
-\tag{3}
-\end{align}
+The third constraint enforces the minimum lot size. When an order is placed, at least $L_i$ units must be ordered. Together the second and third constraint ensure that $x_{i,t}$ is either exactly zero or somewhere between $L_i$ and $M$, with a setup cost charged whenever the latter is the case.
+
+\[
+x_{i,t} \geq L_i y_{i,t}
+\]
 
 \subsubsection{Optimal solution and different cost types}
 
-The model reached a total cost of €394{,}454, of which €79{,}500 comes from setups and €314{,}954 from holding inventory. The fact that holding costs make up about 80\% of the total is not surprising given the large beginning inventories across all parts, which sit in stock for several weeks before being used up.
+The model reaches a total cost of €394{,}454, split between €79{,}500 in setup costs (20\%) and €314{,}954 in holding costs (80\%). The dominance of holding costs is unsurprising given the large beginning inventories across all parts.
 
-Looking at the production schedule, Gurobi clearly prefers a small number of large production runs over many smaller ones. Every component is produced exactly 3 times over the 30 weeks, while \(E2801\) is produced 4 times. Paying a setup cost once and producing a big batch is simply cheaper than paying that cost repeatedly for smaller quantities.
+The production schedule confirms the classic lot-sizing trade-off: Gurobi prefers a small number of large batches, producing every component exactly 3 times and E2801 four times over 30 weeks. Paying one large setup cost once is simply cheaper than paying it repeatedly.
 
-For \(E2801\), the inventory gradually decreases between production runs and lands exactly on zero at the end of weeks 23 and 30. This is Gurobi doing its job: why hold stock you no longer need? For the components, the story is similar but more extreme. Their beginning inventories get consumed within the first few weeks and then drop to zero, where they stay for the rest of the horizon. New stock arrives just in time for the next production run of the parent part, with no buffer in between.
+For E2801 the inventory gradually decreases between production runs, hitting exactly zero at the end of weeks 23 and 30. Gurobi avoids holding unnecessary stock. The components follow a similar but more extreme pattern. Their beginning inventories are consumed within the first few weeks, after which inventory drops to zero and stays there. New stock arrives just in time for the next production run of the parent part, with no buffer in between. V6302 illustrates this perfectly: its entire beginning inventory of 1{,}950 units is consumed in week 1 by the first E2801 lot of 650 units, which requires exactly $3 \times 650 = 1{,}950$ units. Not a single unit left over.
 
-\(V6302\) is a nice example of this: its entire beginning inventory of 1,950 units disappears in week 1, because the first \(E2801\) lot of 650 units requires exactly \(3 \times 650 = 1{,}950\) units of \(V6302\). Not a single unit is left over.
-
-The €79{,}500 in setup costs comes from 3 setups for each of the 6 component parts and 4 setups for \(E2801\), each charged at their respective setup cost from the parameter table.
+The €79{,}500 in setup costs comes from 3 setups for each of the 6 component parts and 4 setups for E2801, each charged at their respective setup cost from the parameter table.
 
 \subsection{Evaluation of the forecast-based plan under realized demand}
 
@@ -284,17 +271,49 @@ The holding cost also increases from €314{,}954.00 to €394{,}988.80. This in
 
 \begin{table}[H]
 \centering
+\begin{minipage}[c]{0.44\textwidth}
+\centering
 \begin{tabular}{lrr}
 \toprule
-\textbf{Cost type} & \textbf{Part 1a (€)} & \textbf{Part 2a (€)} \\
+\textbf{Cost comparison} & \textbf{Part 1a (€)} & \textbf{Part 2a (€)} \\
 \midrule
-Holding cost   & 314{,}954.00 & 394{,}988.80 \\
-Setup cost     & 79{,}500.00  & 145{,}500.00 \\
-Backorder cost & --           & -- \\
+Holding cost   & €314{,}954.00 & €394{,}988.80 \\
+Setup cost     & €79{,}500.00  & €145{,}500.00 \\
+Backorder cost & --            & -- \\
 \midrule
-\textbf{Total cost} & \textbf{394{,}454.00} & \textbf{540{,}488.80} \\
+\textbf{Total cost} & \textbf{€394{,}454.00} & \textbf{€540{,}488.80} \\
 \bottomrule
 \end{tabular}
+\end{minipage}
+\hspace{0.06\textwidth}
+\begin{minipage}[c]{0.44\textwidth}
+\centering
+\textbf{Cost comparison}
+
+\vspace{0.3em}
+\begin{tikzpicture}
+\begin{axis}[
+    height=4cm,
+    width=\textwidth,
+    ymin=350000,
+    ymax=570000,
+    xtick={1,2},
+    xticklabels={Part 1a, Part 2a},
+    ylabel={Total cost (€)},
+    grid=both,
+    scaled y ticks=false,
+    yticklabel style={
+        /pgf/number format/fixed,
+        /pgf/number format/1000 sep={,}
+    }
+]
+\addplot+[mark=*] coordinates {
+    (1,394454)
+    (2,540488.80)
+};
+\end{axis}
+\end{tikzpicture}
+\end{minipage}
 \caption{Cost comparison between assignment 1a and assignment 2a}
 \end{table}
 
@@ -308,23 +327,55 @@ Backorders only occur in week 30, where a shortage of 110 units arises. This sho
 
 Overall, the total cost increases from €540{,}488.80 to €574{,}114.80. Compared to assignment 1b, the backorder cost is lower, suggesting that the finite capacity plan is slightly more robust against demand fluctuations.
 
+However, shortages still occur, showing that capacity constraints limit the flexibility to respond to higher-than-expected demand.
+
 \begin{table}[H]
+\centering
+\begin{minipage}[c]{0.44\textwidth}
 \centering
 \begin{tabular}{lrr}
 \toprule
-\textbf{Cost Comparison} & \textbf{Part 2a} & \textbf{Part 2b} \\
+\textbf{Cost comparison} & \textbf{Part 2a} & \textbf{Part 2b} \\
 \midrule
-Holding Cost   & €394{,}988.80 & €401{,}114.80 \\
-Set-Up Cost    & €145{,}500.00 & €145{,}500.00 \\
-Backorder Cost & --            & €27{,}500.00 \\
+Holding cost   & €394{,}988.80 & €401{,}114.80 \\
+Set-up cost    & €145{,}500.00 & €145{,}500.00 \\
+Backorder cost & --            & €27{,}500.00 \\
 \midrule
-\textbf{Total Cost} & \textbf{540{,}488.80} & \textbf{€574{,}114.80} \\
+\textbf{Total cost} & \textbf{€540{,}488.80} & \textbf{€574{,}114.80} \\
 \bottomrule
 \end{tabular}
+\end{minipage}
+\hspace{0.06\textwidth}
+\begin{minipage}[c]{0.44\textwidth}
+\centering
+\textbf{Cost comparison}
+
+\vspace{0.3em}
+\begin{tikzpicture}
+\begin{axis}[
+    height=4cm,
+    width=\textwidth,
+    ymin=500000,
+    ymax=600000,
+    xtick={1,2},
+    xticklabels={Part 2a, Part 2b},
+    ylabel={Total cost (€)},
+    grid=both,
+    scaled y ticks=false,
+    yticklabel style={
+        /pgf/number format/fixed,
+        /pgf/number format/1000 sep={,}
+    }
+]
+\addplot+[mark=*] coordinates {
+    (1,540488.80)
+    (2,574114.80)
+};
+\end{axis}
+\end{tikzpicture}
+\end{minipage}
 \caption{Comparison part 2a and 2b}
 \end{table}
-
-However, shortages still occur, showing that capacity constraints limit the flexibility to respond to higher-than-expected demand.
 
 \assignmentsection{Assignment 3: Adjusting the MIP model to overtime}
 
@@ -362,21 +413,27 @@ h_i I_{i,t}
 
 \subsubsection{Constraints}
 
-Constraint 1: inventory balance constraint (1a) \\
-Constraint 2: setup constraint (1a) \\
-Constraint 3: minimum lot size constraint (1a)
+The first three constraints remain identical to the base model from Assignment 1a:
 
-Constraint 4: maximum capacity adjusted with overtime for both workstations
+\begin{itemize}[noitemsep, topsep=0pt]
+    \item Constraint 1: inventory balance constraint
+    \item Constraint 2: setup linking constraint
+    \item Constraint 3: minimum lot size constraint
+\end{itemize}
 
-The first constraint ensures that the production of the end product \(E2801\) in each period does not exceed the available capacity of workstation X, which can be increased by using overtime units.
+The overtime model adds two additional types of constraints.
 
-The second constraint limits the total processing time required on workstation Y by accounting for the processing times of components \(B1401\) and \(B2302\), while allowing additional capacity through overtime expressed in minutes.
+\textbf{Constraint 4: capacity constraints with overtime}
+
+For workstation X, the production of the end product \(E2801\) in each period cannot exceed the regular weekly capacity of 800 units plus the additional overtime capacity \(OT_{X,t}\).
 
 \[
 x_{E2801,t} \leq 800 + OT_{X,t}
 \qquad
 \forall t \in \{1,\ldots,30\}
 \]
+
+For workstation Y, the total processing time of parts \(B1401\) and \(B2302\) cannot exceed the regular weekly capacity of 10{,}000 minutes plus the overtime capacity. Since \(OT_{Y,t}\) is expressed in hours, it is multiplied by 60 to convert it into minutes.
 
 \[
 3x_{B1401,t} + 2x_{B2302,t}
@@ -385,16 +442,20 @@ x_{E2801,t} \leq 800 + OT_{X,t}
 \forall t \in \{1,\ldots,30\}
 \]
 
-Constraint 5: maximum overtime for both workstations
+\textbf{Constraint 5: maximum overtime limits}
 
-These constraints ensure that the amount of overtime used at each workstation remains within the allowed limits per period. Specifically, overtime on workstation X is limited to a maximum of 300 additional units per week, while overtime on workstation Y is restricted to at most 38 extra hours per week.
+The overtime variables are also bounded. Workstation X can use at most 300 additional units of capacity per week, while workstation Y can use at most 38 additional hours per week.
 
 \[
 OT_{X,t} \leq 300
+\qquad
+\forall t \in \{1,\ldots,30\}
 \]
 
 \[
 OT_{Y,t} \leq 38
+\qquad
+\forall t \in \{1,\ldots,30\}
 \]
 
 \subsubsection{Cost comparison}
@@ -402,6 +463,8 @@ OT_{Y,t} \leq 38
 The introduction of overtime reduces the total cost by approximately €19{,}000 (-3.6\%) compared to production without overtime. This reduction is driven by the increased flexibility in capacity, which allows the system to better respond to fluctuations in demand. Additionally, the need for inventory buffers is reduced, as production can be more closely aligned with demand peaks instead of relying on early production and stock buildup.
 
 \begin{table}[H]
+\centering
+\begin{minipage}[c]{0.44\textwidth}
 \centering
 \begin{tabular}{lrr}
 \toprule
@@ -415,6 +478,36 @@ Overtime Cost  & --            & €6{,}442.00 \\
 \textbf{Total Cost} & \textbf{€540{,}488.80} & \textbf{€521{,}270.80} \\
 \bottomrule
 \end{tabular}
+\end{minipage}
+\hspace{0.06\textwidth}
+\begin{minipage}[c]{0.44\textwidth}
+\centering
+\textbf{Cost comparison}
+
+\vspace{0.3em}
+\begin{tikzpicture}
+\begin{axis}[
+    height=4cm,
+    width=\textwidth,
+    ymin=500000,
+    ymax=560000,
+    xtick={1,2},
+    xticklabels={Part 2a, Part 3a},
+    ylabel={Total cost (€)},
+    grid=both,
+    scaled y ticks=false,
+    yticklabel style={
+        /pgf/number format/fixed,
+        /pgf/number format/1000 sep={,}
+    }
+]
+\addplot+[mark=*] coordinates {
+    (1,540488.80)
+    (2,521270.80)
+};
+\end{axis}
+\end{tikzpicture}
+\end{minipage}
 \caption{Comparison part 2a and 3a}
 \end{table}
 
@@ -430,6 +523,8 @@ Overall, the total cost increases from €521{,}270.80 to €561{,}552.80, corre
 
 \begin{table}[H]
 \centering
+\begin{minipage}[c]{0.44\textwidth}
+\centering
 \begin{tabular}{lrr}
 \toprule
 \textbf{Cost comparison} & \textbf{Part 3a} & \textbf{Part 3b} \\
@@ -442,6 +537,36 @@ Backorder cost & --            & €34{,}000.00 \\
 \textbf{Total cost} & \textbf{€521{,}270.80} & \textbf{€561{,}552.80} \\
 \bottomrule
 \end{tabular}
+\end{minipage}
+\hspace{0.06\textwidth}
+\begin{minipage}[c]{0.44\textwidth}
+\centering
+\textbf{Cost comparison}
+
+\vspace{0.3em}
+\begin{tikzpicture}
+\begin{axis}[
+    height=4cm,
+    width=\textwidth,
+    ymin=500000,
+    ymax=580000,
+    xtick={1,2},
+    xticklabels={Part 3a, Part 3b},
+    ylabel={Total cost (€)},
+    grid=both,
+    scaled y ticks=false,
+    yticklabel style={
+        /pgf/number format/fixed,
+        /pgf/number format/1000 sep={,}
+    }
+]
+\addplot+[mark=*] coordinates {
+    (1,521270.80)
+    (2,561552.80)
+};
+\end{axis}
+\end{tikzpicture}
+\end{minipage}
 \caption{Cost comparison part 3a and 3b}
 \end{table}
 
@@ -490,30 +615,47 @@ The two new decision variables are independent of the period, since we determine
 
 \subsubsection{Constraints}
 
-Constraint 1: inventory balance constraint (1a) \\
-Constraint 2: setup constraint (1a) \\
-Constraint 3: minimum lot size constraint (1a)
+The model extends the base formulation from Assignment 1a. Therefore, the following constraints remain unchanged:
 
-Constraint 4: maximum capacity
+\begin{itemize}[noitemsep]
+    \item Constraint 1: inventory balance constraint (1a)
+    \item Constraint 2: setup constraint (1a)
+    \item Constraint 3: minimum lot size constraint (1a)
+\end{itemize}
 
-The first constraint ensures that the production of the end product \(E2801\) each period does not exceed the available capacity of workstation X. The second constraint limits the total processing time required on workstation Y in each period.
+\textbf{Constraint 4: Capacity constraints with expansion}
+
+Two capacity constraints are introduced, one for each workstation. These constraints ensure that production in each period does not exceed the available capacity, which can now be permanently increased through expansion decisions.
+
+\begin{itemize}
+    \item \textit{Workstation X (end product $E2801$):} \\
+    The production of the end product in each period is limited by the base capacity of 800 units, which can be increased by the expansion variable $dx$.
+\end{itemize}
 
 \[
-x_{E2801,t} \leq 800 + dx
-\qquad
-\forall t \in \{1,\ldots,30\}
+x_{E2801,t} \leq 800 + dx 
+\qquad \forall t \in \{1,\ldots,30\}
 \]
+
+\begin{itemize}
+    \item \textit{Workstation Y (components $B1401$ and $B2302$):} \\
+    The total processing time required for component production is constrained by the available capacity in minutes. This capacity can be increased proportionally through the expansion variable $dy\_pct$.
+\end{itemize}
 
 \[
 3x_{B1401,t} + 2x_{B2302,t}
 \leq 10{,}000 + 100 \cdot dy\_pct
-\qquad
-\forall t \in \{1,\ldots,30\}
+\qquad \forall t \in \{1,\ldots,30\}
 \]
 
-Constraint 5: maximum expansion
+\textbf{Constraint 5: Expansion limits}
 
-The first constraint makes sure workstation X is limited to an expansion of 200 units and the second constraint makes sure that workstation Y is limited to a capacity increase of 40\%.
+These constraints ensure that the expansion decisions remain within feasible and predefined bounds.
+
+\begin{itemize}
+    \item The capacity expansion of workstation X is limited to at most 200 additional units.
+    \item The capacity expansion of workstation Y is limited to at most 40\%, expressed in discrete percentage steps.
+\end{itemize}
 
 \[
 0 \leq dx \leq 200
@@ -529,6 +671,9 @@ Part 2a results in the highest total cost (€540{,}488.80) due to high holding 
 
 \begin{table}[H]
 \centering
+\begin{minipage}[c]{0.50\textwidth}
+\centering
+\resizebox{\linewidth}{!}{
 \begin{tabular}{lrrr}
 \toprule
 \textbf{Cost comparison} & \textbf{Part 2a} & \textbf{Part 3a} & \textbf{Part 4a} \\
@@ -542,6 +687,38 @@ Backorder Cost & --            & --            & -- \\
 \textbf{Total Cost} & \textbf{€540{,}488.80} & \textbf{€521{,}270.80} & \textbf{€520{,}723.30} \\
 \bottomrule
 \end{tabular}
+}
+\end{minipage}
+\hspace{0.03\textwidth}
+\begin{minipage}[c]{0.42\textwidth}
+\centering
+\textbf{Cost comparison}
+
+\vspace{0.3em}
+\begin{tikzpicture}
+\begin{axis}[
+    height=4cm,
+    width=\textwidth,
+    ymin=510000,
+    ymax=550000,
+    xtick={1,2,3},
+    xticklabels={Part 2a, Part 3a, Part 4a},
+    ylabel={Total cost (€)},
+    grid=both,
+    scaled y ticks=false,
+    yticklabel style={
+        /pgf/number format/fixed,
+        /pgf/number format/1000 sep={,}
+    }
+]
+\addplot+[mark=*] coordinates {
+    (1,540488.80)
+    (2,521270.80)
+    (3,520723.30)
+};
+\end{axis}
+\end{tikzpicture}
+\end{minipage}
 \caption{Cost comparison part 2a, 3a and 4a}
 \end{table}
 

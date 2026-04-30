@@ -69,7 +69,17 @@ for t in periods:
     model.addConstr(PROC_TIME_Y['B1401']*x['B1401',t] + PROC_TIME_Y['B2302']*x['B2302',t]
                     <= CAPACITY_Y + 60*ot_y[t], name=f"capacity_Y_{t}")
 
+# ─── Solution pool: zoek alle oplossingen met dezelfde optimale kost ───
+model.setParam('PoolSearchMode', 2)
+model.setParam('PoolSolutions', 10)
+model.setParam('PoolGap', 0.0)
+# ───────────────────────────────────────────────────────────────────────
+
 model.optimize()
+
+# ─── Aantal alternate optima in terminal ───────────────────────────────
+print(f"\n>>> Aantal optimale oplossingen gevonden: {model.SolCount}\n")
+# ───────────────────────────────────────────────────────────────────────
 
 if model.status == GRB.OPTIMAL:
     total_setup   = sum(SETUP_COST[i]   * y[i,t].X for i in parts for t in periods)
@@ -334,3 +344,4 @@ if model.status == GRB.OPTIMAL:
     print(f"  Holding:       EUR {clean_num(total_holding):,.2f}")
     print(f"  Overtime X:    EUR {clean_num(total_ot_x):,.2f}")
     print(f"  Overtime Y:    EUR {clean_num(total_ot_y):,.2f}")
+    print(f"  Aantal alternate optima: {model.SolCount}")
