@@ -982,54 +982,70 @@ Starting from the model in Part 5, we sought ways to enhance its performance usi
 
 \textbf{Idea 1: Working with a safety stock}
 
-To account for demand uncertainty, a safety stock was introduced for the end product. In the previous assignments, the production plan was optimized based on forecasted demand only. However, as observed in the dataset, the realized demand deviates from the forecast, which may lead to stockouts and consequently backorder costs. To mitigate this risk, a safety stock policy was implemented.
+To account for demand uncertainty, a safety stock was introduced for the end product (Lim\`{e}re, 2026). In the previous assignments, the production plan was optimized based on forecasted demand only. However, as observed in the dataset, the realized demand consistently deviates from the forecast, which may lead to stockouts and consequently backorder costs. To mitigate this risk, a safety stock policy was implemented.
 
-The safety stock level was determined using a standard statistical approach based on forecast errors. First, the forecast error per period was calculated as the difference between realized and forecasted demand. The standard deviation of these errors ($\sigma_e$) was then computed to quantify the variability in demand. Since the system operates with a lead time $L = 1$ period and a weekly review period $R = 1$, the relevant uncertainty window equals $L + R = 2$ periods. Therefore, the standard deviation over the lead time demand was calculated as:
+The safety stock level was determined using a standard statistical approach based on forecast errors. The forecast error per period was calculated as the difference between realized and forecasted demand. The standard deviation of these errors ($\sigma_e$) was then computed to quantify the variability in demand:
 
-\[
-\sigma_{LTD} = \sigma_e \cdot \sqrt{L + R}
-\]
+\begin{equation}
+    \sigma_e = \text{std}(d_t^{\text{realized}} - d_t^{\text{forecast}}), \quad t \in \{1, \dots, 30\}
+\end{equation}
 
-To achieve a target cycle service level of 95\%, a safety factor $z = 1.65$ was used. The safety stock was then computed as:
+A first, simplified approach computes the safety stock directly from the forecast error standard deviation:
 
-\[
-SS = z \cdot \sigma_{LTD}
-\]
+\begin{equation}
+    SS = z_{1-\alpha} \cdot \sigma_e
+\end{equation}
 
-Finally, the resulting value was rounded up to the nearest multiple of 10 units to ensure compatibility with the minimum lot size constraints in the model.
+This formulation assumes that the safety stock only needs to cover the variability within a single period. However, the system operates with a lead time of $L = 1$ period for the end product and a weekly review period of $R = 1$. The lead time refers to the delay between placing a production order and receiving the finished goods; the review period reflects how frequently production decisions are made. During this combined window of $L + R = 2$ periods, no corrective action can be taken, meaning the safety stock must absorb all demand fluctuations that occur within this interval. Accounting for this, the standard deviation over the full uncertainty window becomes:
+
+\begin{equation}
+    \sigma_{LTD} = \sigma_e \cdot \sqrt{L + R}
+\end{equation}
+
+The resulting safety stock is then:
+
+\begin{equation}
+    SS = z_{1-\alpha} \cdot \sigma_{LTD}
+\end{equation}
 
 This safety stock was incorporated into the MIP model as a lower bound on the inventory of the end product in each period:
 
-\[
-I_{E2801,t} \geq SS 
-\qquad \forall t \in \{1,\ldots,30\}
-\]
+\begin{equation}
+    I_{E2801,t} \geq SS \quad \forall t \in \{1, \dots, T\}
+\end{equation}
 
-By enforcing this constraint, the model is forced to maintain a buffer against demand variability, which shifts production earlier in time and reduces the likelihood of stockouts when realized demand exceeds the forecast.
+By enforcing this constraint, the model is forced to maintain a buffer against demand variability, which shifts production earlier in time and reduces the likelihood of stockouts when realized demand exceeds the forecast. Compared to the model without safety stock, this approach typically leads to higher holding costs due to the additional inventory. However, under realized demand, safety stock effectively buffers against demand variability, significantly reducing backorders and their associated costs. Given the relatively high backorder cost in this problem setting, maintaining a safety stock is economically justified and results in a more robust production plan under uncertainty.
 
-Compared to the forecasted demand model without safety stock, this approach typically leads to higher holding costs due to the additional inventory. However, under realized demand, safety stock effectively buffers against demand variability, significantly reducing backorders and their associated costs. Given the relatively high backorder cost in this problem setting, maintaining a safety stock is economically justified and results in a more robust production plan under uncertainty.
+To assess the sensitivity of this approach to the chosen confidence level, the model was solved under two target cycle service levels: 95\% ($z_{1-\alpha} = 1.65$, $SS = 60$ units) and 99\% ($z_{1-\alpha} = 2.33$, $SS = 84$ units). The key results are summarized in Table~\ref{tab:ss_results}. A full cost breakdown and detailed production schedules can be found in the accompanying Excel file.
 
-\begin{table}[H]
-\centering
-\begin{tabular}{lccccc}
-\toprule
-\textbf{Design} & \textbf{Safety Stock} & \textbf{Total Costs (forecast)} & \textbf{Total Costs (realized)} & \textbf{\# backorder} & \textbf{service level} \\
-\midrule
-Part 5 & (No) & €510{,}076.60 & €553{,}686.60 & 149 & 93.33\% \\
-1      & €55  & €520{,}462.60 & €538{,}728.60 & 50  & 96.7\% \\
-\bottomrule
-\end{tabular}
-\caption{Adding safety stock}
+\begin{table}[h]
+    \centering
+    \caption{Safety stock sensitivity analysis: key results}
+    \label{tab:ss_results}
+    \begin{tabular}{l c c c c c}
+        \toprule
+        \textbf{Design} & \textbf{Safety Stock} & \textbf{Total Cost (forecast)} & \textbf{Total Cost (realized)} & \textbf{\# backorder} & \textbf{Service level} \\
+        \midrule
+        Assignment 5b & (No) & \texteuro 510,076.60 & \texteuro 553,686.60 & 149 & 93.33\% \\
+        95\% CSL     & 60   & \texteuro 520,462.60 & \texteuro 538,728.60 & 50  & 96.67\% \\
+        99\% CSL     & 84   & \texteuro 524,617.00 & \texteuro 536,739.00 & 26  & 96.67\% \\
+        \bottomrule
+    \end{tabular}
 \end{table}
 
+Both safety stock levels significantly reduce backorder costs under realized demand. Notably, the 99\% service level yields a lower total cost than the 95\% level under realized demand (\texteuro 536,739 vs.\ \texteuro 538,729). This counterintuitive result arises because the backorder penalty (\texteuro 250/unit/week) vastly exceeds the holding cost (\texteuro 6/unit/week for E2801). The additional 24 units of safety stock generate approximately \texteuro 1,850 in extra holding costs but prevent backorders worth approximately \texteuro 6,000, yielding a net saving of roughly \texteuro 4,150. This suggests that for this particular cost structure, even higher service levels could be economically beneficial.
+
+\vspace{0.5em}
 \textbf{Idea 2: Outsourcing production}
 
+\vspace{0.5em}
 \textbf{Idea 3: Double exponential smoothing for demand forecasting}
 
 One candidate forecasting method to handle demand uncertainty is Holt's method (double exponential smoothing), which extends simple exponential smoothing by maintaining two smoothing equations: one for the level of the series ($S_t$) and one for the trend ($G_t$), controlled by two smoothing constants $\alpha$ and $\beta$ respectively. The $\tau$-step-ahead forecast is then given by $F_{t,t+\tau} = S_t + \tau G_t$, making it well-suited for data exhibiting a linear trend.
 
 However, applying Holt's method to this problem is not appropriate for two reasons. First, the method requires historical demand data prior to the planning horizon to reliably initialize $S_0$ and $G_0$, typically through linear regression. This is data that is not available here, as the dataset only covers weeks 1 through 30 with no preceding observations. Second, inspecting the realized demand reveals no clear linear trend; demand fluctuates around a relatively stable mean, making the trend component unnecessary. For these reasons, simpler and more robust approaches are better suited to address the uncertainty between forecasted and realized demand in this setting.
 
+\vspace{0.5em}
 \textbf{Idea 4: Increasing the number of periods in the planning horizon}
 
 \subsection{Conclusion 6a}
@@ -1064,15 +1080,30 @@ None of the models include a safety lead time buffer for purchased components, m
 
 Beyond the modeled uncertainties, supply-side disruptions such as supplier reliability issues, quality defects, or yield losses can further impact system performance. Yield losses and rework reduce effective throughput below nominal capacity, tightening bottlenecks and potentially generating shortages that safety stock alone cannot absorb. This highlights the importance of combining different types of buffers (inventory, capacity, and time) rather than relying on a single mechanism.
 
+\clearpage
 \assignmentsection{References}
 
-Limère, V. (2026a). Production planning \& group project [Lecture slides, Advanced Production Management, Ghent University].
+\begin{flushleft}
+\setlength{\parindent}{0pt}
+\setlength{\parskip}{0.4em}
 
-Graves, S. C. (1999). \textit{Manufacturing planning and control} (Working paper). Massachusetts Institute of Technology.
+\hangindent=1.5em
+\hangafter=1
+Limière, V. (2026). APM3\_ProductionPlanning\_GroupProject [Lecture slides, Advanced Production Management, Ghent University].
 
-Limère, V. (2026b). Inventory control -- deterministic [Lecture slides, Advanced Production Management, Ghent University].
+\hangindent=1.5em
+\hangafter=1
+Graves, S. C. (1999). Manufacturing planning and control (Working paper). Massachusetts Institute of Technology.
 
-Limère, V. (2026c). Inventory management: Stochastic demand [Lecture slides, Advanced Production Management, Ghent University].
+\hangindent=1.5em
+\hangafter=1
+Limière, V. (2026). APM4\_Inventory\_Deterministic [Lecture slides, Advanced Production Management, Ghent University].
+
+\hangindent=1.5em
+\hangafter=1
+Limière, V. (2026). APM5\_Inventory\_Stochastic [Lecture slides, Advanced Production Management, Ghent University].
+
+\end{flushleft}
 
 \assignmentsection{Appendix}
 

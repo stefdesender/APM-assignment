@@ -42,4 +42,5 @@
 \contentsline {subsection}{\numberline {6.1}6a. Ideas to improve performance and reduce uncertainty}{11}{subsection.6.1}%
 \contentsline {subsection}{\numberline {6.2}Conclusion 6a}{12}{subsection.6.2}%
 \contentsline {subsection}{\numberline {6.3}6b. Other sources of uncertainty}{12}{subsection.6.3}%
-\contentsline {section}{Appendix}{13}{section*.13}%
+\contentsline {section}{References}{14}{section*.13}%
+\contentsline {section}{Appendix}{14}{section*.14}%
