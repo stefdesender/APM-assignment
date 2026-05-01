@@ -72,11 +72,11 @@ periods = range(1, T + 1)
 
 # ── Scenarios to run ─────────────────────────────────────────────────────
 SCENARIOS = [
-    {"label": "95% CSL", "z": 1.65, "sheet": "ss_realized_95"},
-    {"label": "99% CSL", "z": 2.33, "sheet": "ss_realized_99"},
+    {"label": "95% CSL", "z": 1.65, "sheet": "Output_6a_ss_rl_95"},
+    {"label": "99% CSL", "z": 2.33, "sheet": "Output_6a_ss_rl_99"},
 ]
 
-OUTPUT_FILE = "OUTPUT_6a.xlsx"
+OUTPUT_FILE = "OUTPUT.xlsx"
 results = []  # store results for comparison table
 
 for scenario in SCENARIOS:
