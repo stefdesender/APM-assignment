@@ -982,9 +982,9 @@ Starting from the model in Part 5, we sought ways to enhance its performance usi
 
 \textbf{Idea 1: Working with a safety stock}
 
-To account for demand uncertainty, a safety stock was introduced for the end product (Lim\`{e}re, 2026). In the previous assignments, the production plan was optimized based on forecasted demand only. However, as observed in the dataset, the realized demand consistently deviates from the forecast, which may lead to stockouts and consequently backorder costs. To mitigate this risk, a safety stock policy was implemented.
+To account for demand uncertainty, a safety stock was introduced for the end product. In the previous assignments, the production plan was optimized based on forecasted demand only. However, as observed in the dataset, the realized demand consistently deviates from the forecast, which may lead to stockouts and consequently backorder costs. To mitigate this risk, a safety stock policy was implemented.
 
-The safety stock level was determined using a standard statistical approach based on forecast errors. The forecast error per period was calculated as the difference between realized and forecasted demand. The standard deviation of these errors ($\sigma_e$) was then computed to quantify the variability in demand:
+The safety stock level was determined using a standard statistical approach based on forecast errors. The forecast error per period was calculated as the difference between realized and forecasted demand. The standard deviation of these errors ($\sigma_e$) was then computed to quantify the variability in demand  (Lim\`{e}re, 2026):
 
 \begin{equation}
     \sigma_e = \text{std}(d_t^{\text{realized}} - d_t^{\text{forecast}}), \quad t \in \{1, \dots, 30\}
