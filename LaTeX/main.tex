@@ -674,7 +674,7 @@ These constraints ensure that the expansion decisions remain within feasible and
 
 \subsubsection{Cost comparison}
 
-Part 2a results in the highest total cost (€540{,}488.80) due to high holding and setup costs under strict capacity constraints. In Part 3a, allowing overtime reduces the total cost to €521{,}270.80 by lowering holding costs, although it introduces additional overtime costs. Part 4a achieves the lowest total cost (€520{,}723.30) by enabling permanent capacity expansion. Despite the added investment cost, this option further reduces holding and setup costs, making it the most cost-efficient solution overall.
+Part 2a results in the highest total cost of €540{,}488.80 due to high holding and setup costs under strict capacity constraints. In Part 3a, allowing overtime reduces the total cost to €521{,}270.80 by lowering holding costs, although it introduces additional overtime costs. Part 4a achieves the lowest total cost of €520{,}723.30 by enabling permanent capacity expansion. The optimization model identifies an ideal expansion of 102 additional units for workstation X and a capacity increase of 8.3\% for workstation Y. Despite the associated investment cost for these permanent upgrades, this configuration further reduces holding and setup costs, making it the most cost-efficient solution overall.
 
 \begin{table}[H]
 \centering
@@ -1047,6 +1047,55 @@ However, applying Holt's method to this problem is not appropriate for two reaso
 
 \vspace{0.5em}
 \textbf{Idea 4: Increasing the number of periods in the planning horizon}
+
+
+\textbf{Idea 5: Capacity expansion both workstations}
+
+To investigate whether capacity expansion could mitigate demand uncertainty, sensitivity analyses were performed for both workstations, sweeping around the Part 5a optimal values for capacity expansion. A more detailed breakdown of all tested values, including full cost decomposition, is provided in the appendix.
+
+For Workstation X, which directly produces E2801, one might expect that more capacity resolves the backorders. However, the backorders remain constant at 149 units across all capacity values from 100 to 600 units. Since the optimizer in Assignment 5a hit the upper bound of 200 units, we tested whether exceeding this limit would lower total costs. The results show that this is not the case. The lowest realized total cost of €553{,}718 is achieved for a capacity of 200 units, and any further expansion only increases investment cost.
+
+\begin{table}[H]
+\centering
+\begin{tabular}{lccccc}
+\toprule
+\textbf{Design} & \textbf{Max cap X} & \textbf{Forecast cost} & \textbf{Realized cost} & \textbf{Backorders} & \textbf{Service level} \\
+\midrule
+1       & 100 u & €512{,}123.10 & €557{,}733.10 & 149 & 93.33\% \\
+2       & 150 u & €511{,}953.40 & €555{,}745.10 & 149 & 93.33\% \\
+current & 200 u & €510{,}108.10 & €553{,}718.10 & 149 & 93.33\% \\
+3       & 250 u & €510{,}443.10 & €554{,}053.10 & 149 & 93.33\% \\
+4       & 300 u & €510{,}843.10 & €554{,}453.10 & 149 & 93.33\% \\
+\bottomrule
+\end{tabular}
+\caption{Sensitivity analysis: maximum expansion Workstation X}
+\end{table}
+
+\vspace{0.5em}
+
+For Workstation Y, forcing a higher expansion produces more B1401 and B2302 components upfront, building a component buffer. However, the backorder cost shows no consistent improvement and even increases at higher expansion levels. The reason is fundamental: Workstation Y only produces intermediate components. No matter how large the component buffer is, if the end product E2801 is not produced at the right time, backorders will still occur.
+
+\begin{table}[H]
+\centering
+\begin{tabular}{lccccc}
+\toprule
+\textbf{Design} & \textbf{Max cap Y} & \textbf{Forecast cost} & \textbf{Realized cost} & \textbf{Backorders} & \textbf{Service level} \\
+\midrule
+1       & 4.1\%  & €514{,}991.30 & €558{,}601.30 & 149 & 93.33\% \\
+2       & 9.1\%  & €512{,}176.50 & €555{,}786.50 & 149 & 93.33\% \\
+current & 14.1\% & €510{,}089.40 & €553{,}699.40 & 149 & 93.33\% \\
+3       & 19.1\% & €511{,}634.10 & €555{,}244.10 & 149 & 93.33\% \\
+4       & 24.1\% & €514{,}752.30 & €558{,}182.30 & 149 & 93.33\% \\
+\bottomrule
+\end{tabular}
+\caption{Sensitivity analysis: maximum expansion Workstation Y}
+\end{table}
+
+\vspace{0.5em}
+
+The root cause is the same in both cases: backorders in weeks 26 and 30 arise from a mismatch in production timing, not a capacity shortage. The optimizer, planning on forecasted demand, does not schedule production close enough to these demand peaks, leaving additional capacity unused if it is not deployed at the right moment.
+
+Both analyses therefore confirm that capacity expansion alone is an ineffective strategy for handling demand uncertainty. The lowest realized cost is achieved at the Part 5a reference values (dx = 200 u, dy = 14.1\%). The real solution lies in planning logic, which motivates the safety stock approach discussed in Idea 1.
 
 \subsection{Conclusion 6a}
 
