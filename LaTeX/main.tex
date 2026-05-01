@@ -1049,6 +1049,7 @@ However, applying Holt's method to this problem is not appropriate for two reaso
 \textbf{Idea 4: Increasing the number of periods in the planning horizon}
 
 
+\vspace{0.5em}
 \textbf{Idea 5: Capacity expansion both workstations}
 
 To investigate whether capacity expansion could mitigate demand uncertainty, sensitivity analyses were performed for both workstations, sweeping around the Part 5a optimal values for capacity expansion. A more detailed breakdown of all tested values, including full cost decomposition, is provided in the appendix.
@@ -1057,6 +1058,10 @@ For Workstation X, which directly produces E2801, one might expect that more cap
 
 \begin{table}[H]
 \centering
+
+\begin{minipage}[c]{0.60\textwidth}
+\centering
+\resizebox{\linewidth}{!}{
 \begin{tabular}{lccccc}
 \toprule
 \textbf{Design} & \textbf{Max cap X} & \textbf{Forecast cost} & \textbf{Realized cost} & \textbf{Backorders} & \textbf{Service level} \\
@@ -1068,15 +1073,27 @@ current & 200 u & €510{,}108.10 & €553{,}718.10 & 149 & 93.33\% \\
 4       & 300 u & €510{,}843.10 & €554{,}453.10 & 149 & 93.33\% \\
 \bottomrule
 \end{tabular}
+}
+\end{minipage}
+\hfill
+\begin{minipage}[c]{0.38\textwidth}
+\centering
+\vspace{-0.3cm}
+\includegraphics[width=\textwidth]{MaxX.png}
+\end{minipage}
+
 \caption{Sensitivity analysis: maximum expansion Workstation X}
 \end{table}
-
 \vspace{0.5em}
 
 For Workstation Y, forcing a higher expansion produces more B1401 and B2302 components upfront, building a component buffer. However, the backorder cost shows no consistent improvement and even increases at higher expansion levels. The reason is fundamental: Workstation Y only produces intermediate components. No matter how large the component buffer is, if the end product E2801 is not produced at the right time, backorders will still occur.
 
 \begin{table}[H]
 \centering
+
+\begin{minipage}[c]{0.60\textwidth}
+\centering
+\resizebox{\linewidth}{!}{
 \begin{tabular}{lccccc}
 \toprule
 \textbf{Design} & \textbf{Max cap Y} & \textbf{Forecast cost} & \textbf{Realized cost} & \textbf{Backorders} & \textbf{Service level} \\
@@ -1088,6 +1105,15 @@ current & 14.1\% & €510{,}089.40 & €553{,}699.40 & 149 & 93.33\% \\
 4       & 24.1\% & €514{,}752.30 & €558{,}182.30 & 149 & 93.33\% \\
 \bottomrule
 \end{tabular}
+}
+\end{minipage}
+\hfill
+\begin{minipage}[c]{0.38\textwidth}
+\centering
+\vspace{-0.3cm}
+\includegraphics[width=\textwidth]{MaxY.png}
+\end{minipage}
+
 \caption{Sensitivity analysis: maximum expansion Workstation Y}
 \end{table}
 
