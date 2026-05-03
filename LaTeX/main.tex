@@ -111,6 +111,8 @@ Three decision variables are defined for each part $i$ and period $t$. The first
 
 \[
 x_{i,t} = \text{number of units of part } i \text{ ordered in period } t
+\qquad\qquad
+I_{i,t} = \text{inventory (units) of part } i \text{ in period } t
 \]
 
 \[
@@ -119,10 +121,6 @@ y_{i,t} =
 1, & \text{if an order for part } i \text{ in period } t \text{ is placed} \\
 0, & \text{otherwise}
 \end{cases}
-\]
-
-\[
-I_{i,t} = \text{inventory (units) of part } i \text{ in period } t
 \]
 
 \subsubsection{Model}
@@ -142,12 +140,13 @@ The model has four sets of constraints.
 
 The inventory balance constraint ensures that end-of-period stock is consistent with what was available before, what arrived, and what was consumed. End-of-period stock for part $i$ equals the stock from the previous period, plus any order $x_{i,t-LT_i}$ placed $LT_i$ periods earlier (so arrives in period $t$), minus the forecasted demand $FD_{i,t}$. When $t - LT_i < 1$, no order placed within the planning horizon could have arrived yet, so $x_{i,t-LT_i}$ drops out.
 
-\[
-I_{i,t} = I_{i,t-1} + x_{i,t-LT_i} - FD_{i,t}
-\]
+```latex
+he model has four sets of constraints.
+
+The inventory balance constraint ensures that end-of-period stock is consistent with what was available before, what arrived, and what was consumed. End-of-period stock for part $i$ equals the stock from the previous period, plus any order $x_{i,t-LT_i}$ placed $LT_i$ periods earlier (so arrives in period $t$), minus the forecasted demand $FD_{i,t}$. When $t - LT_i < 1$, no order placed within the planning horizon could have arrived yet, so $x_{i,t-LT_i}$ drops out.
 
 \[
-\text{if } t - LT_i < 1 \Rightarrow x_{i,t} = 0 \Rightarrow I_{i,t} = I_{i,t-1} - FD_{i,t}
+I_{i,t} = I_{i,t-1} + x_{i,t-LT_i} - FD_{i,t} \qquad\qquad \text{if } t - LT_i < 1 \Rightarrow x_{i,t} = 0 \Rightarrow I_{i,t} = I_{i,t-1} - FD_{i,t}
 \]
 
 The second constraint links ordering quantity to the setup variable: production is only allowed when a setup takes place, enforced by $x_{i,t} \leq M \cdot y_{i,t}$. If $y_{i,t} = 0$, then $x_{i,t}$ is forced to zero; if $y_{i,t} = 1$, production is allowed up to big M. The value of the big M was set to 25 times the total forecasted demand over all 30 periods, slightly above the highest BOM multiplier in the system (21, or $3 \cdot 7$, for B4702), ensuring M is never restrictive for any part. Note that M could also be made part-specific, using the exact BOM multiplier per part giving tighter bounds and potentially improve solver performance.
@@ -174,15 +173,11 @@ The €79{,}500 in setup costs comes from 3 setups for each of the 6 component p
 
 \subsection{Evaluation of the forecast-based plan under realized demand}
 
-In part 1b, the production plan obtained in part 1a is kept fixed and evaluated under the realized demand instead of the forecasted demand. This implies that no new optimization is performed. The setup decisions and production quantities from part 1a remain unchanged, while the demand for the end product is replaced by the realized demand values. Whenever the available inventory is insufficient to satisfy demand immediately, the unmet demand is backordered. A backorder cost of €250 per unit per period is incurred.
+In part 1b, the production plan from part 1a is kept fixed and evaluated under realized demand. No re-optimization is performed; only the end-product demand is replaced by realized values. Unmet demand is backordered at a cost of €250 per unit per period.
 
-Since the production plan itself is unchanged, the setup cost remains equal to the value obtained in part 1a, namely €79{,}500. The holding cost under realized demand equals €321{,}542, which is slightly higher than in part 1a. In addition, backorder costs arise and amount to €46{,}750. As a result, the total cost increases to €447{,}792.
+The total cost increases from €394{,}454 to €447{,}792 (+€53{,}338), mainly driven by backorder costs of €46{,}750. The holding cost rises slightly from €314{,}954 to €321{,}542, while setup costs remain unchanged at €79{,}500. The service level equals 93.33\% (28/30 periods without backorder) and the fill rate is 96.89\% (5{,}830/6{,}017 units on time).
 
-The service performance of the plan is evaluated using the service level and the fill rate. The service level equals 93.33\%, meaning that in 28 out of 30 periods there is no backorder at the end of the period. The fill rate equals 96.89\%, indicating that 5{,}830 out of 6{,}017 demanded units are delivered on time. Hence, although the plan was optimized for forecasted rather than realized demand, it still satisfies most customer demand without delay.
-
-Backorders occur only in weeks 23 and 30, with shortages of 77 and 110 units respectively. This shows that the plan from part 1a performs reasonably well under demand uncertainty, but is not fully robust against deviations between forecasted and realized demand. In periods where actual demand exceeds what the inventory profile can absorb, shortages arise.
-
-Compared with part 1a, the total cost increases from €394{,}454 to €447{,}792, corresponding to an increase of €53{,}338. This increase is mainly caused by the introduction of backorder costs, while the setup cost remains unchanged because the same production schedule is used. The holding cost also increases slightly, from €314{,}954 to €321{,}542. Overall, these results show that a plan based on forecasted demand can still perform relatively well under realized demand, but demand deviations lead to additional costs and reduced service performance.
+Backorders occur only in weeks 23 and 30 (77 and 110 units respectively), showing that the plan performs reasonably well under demand uncertainty but remains vulnerable when realized demand exceeds the inventory buffer.
 
 \begin{table}[H]
 \centering
@@ -267,11 +262,8 @@ The corresponding capacity constraint for workstation Y is:
 The complete model for assignment 2a is therefore the model from assignment 1a, extended with constraints (4) and (5). These capacity constraints restrict the timing of production and prevent the optimizer from producing arbitrarily large batches in a single period.
 
 \subsubsection{Cost comparison}
-Compared with assignment 1a, the introduction of finite production capacity leads to a significant increase in total cost, rising from €394{,}454.00 to €540{,}488.80. This increase is primarily driven by a substantial rise in setup costs, which grow from €79{,}500.00 to €145{,}500.00 (+83\%). Under capacity limitations, the model can no longer concentrate production in a few large batches during the most cost-efficient periods. Instead, production must be spread over more periods, resulting in smaller and more frequent production runs and therefore more setups.
 
-In addition, holding costs increase from €314{,}954.00 to €394{,}988.80 (+25.4\%). This is because capacity constraints force production to occur earlier than in the infinite-capacity case, leading to higher inventory levels that must be carried over time.
-
-Overall, the inclusion of capacity constraints reduces production flexibility, which increases both setup and holding costs. Although this results in a higher total cost, it produces a more realistic and operationally feasible production plan.
+The introduction of finite capacity increases total cost from €394{,}454.00 to €540{,}488.80. Setup costs rise from €79{,}500.00 to €145{,}500.00 (+83\%), as the model can no longer concentrate production in a few large batches during the most cost-efficient periods and must spread production over more periods with more frequent, smaller runs. Holding costs increase from €314{,}954.00 to €394{,}988.80 (+25.4\%), since capacity constraints force earlier production, building up inventory that must be carried over time. Although this results in a higher total cost, it produces a more realistic and operationally feasible production plan.
 
 \begin{table}[H]
 \centering
@@ -451,15 +443,7 @@ For workstation Y, the total processing time of parts \(B1401\) and \(B2302\) ca
 The overtime variables are also bounded. Workstation X can use at most 300 additional units of capacity per week, while workstation Y can use at most 38 additional hours per week.
 
 \[
-OT_{X,t} \leq 300
-\qquad
-\forall t \in \{1,\ldots,30\}
-\]
-
-\[
-OT_{Y,t} \leq 38
-\qquad
-\forall t \in \{1,\ldots,30\}
+OT_{X,t} \leq 300 \qquad OT_{Y,t} \leq 38 \qquad \forall t \in \{1,\ldots,30\}
 \]
 
 \subsubsection{Cost comparison}
@@ -622,13 +606,7 @@ The two new decision variables are independent of the period, since we determine
 
 \subsubsection{Constraints}
 
-The model extends the base formulation from Assignment 1a. Therefore, the following constraints remain unchanged:
-
-\begin{itemize}[noitemsep]
-    \item Constraint 1: inventory balance constraint (1a)
-    \item Constraint 2: setup constraint (1a)
-    \item Constraint 3: minimum lot size constraint (1a)
-\end{itemize}
+Constraints 1--3 (inventory balance, setup linking, minimum lot size) remain unchanged from Assignment 1a.
 
 \textbf{Constraint 4: Capacity constraints with expansion}
 
@@ -657,19 +635,10 @@ x_{E2801,t} \leq 800 + dx
 
 \textbf{Constraint 5: Expansion limits}
 
-These constraints ensure that the expansion decisions remain within feasible and predefined bounds.
-
-\begin{itemize}
-    \item The capacity expansion of workstation X is limited to at most 200 additional units.
-    \item The capacity expansion of workstation Y is limited to at most 40\%, expressed in discrete percentage steps.
-\end{itemize}
+These constraints ensure that the expansion decisions remain within feasible and predefined bounds. The capacity expansion of workstation X is limited to at most 200 additional units, while workstation Y is limited to at most 40\%, expressed in discrete percentage steps.
 
 \[
-0 \leq dx \leq 200
-\]
-
-\[
-0 \leq dy\_pct \leq 40
+0 \leq dx \leq 200 \qquad\qquad 0 \leq dy\_pct \leq 40
 \]
 
 \subsubsection{Cost comparison}
@@ -824,13 +793,9 @@ h_i I_{i,t}
 
 \subsubsection{Constraints}
 
-Constraint 1: inventory balance constraint (1a) \\
-Constraint 2: setup constraint (1a) \\
-Constraint 3: minimum lot size constraint (1a) \\
-Constraint 4: maximum overtime (3a) \\
-Constraint 5: maximum expansion (4a)
+Constraints 1--3 (inventory balance, setup linking, minimum lot size) and constraints 4--5 (maximum overtime, maximum expansion) remain unchanged from assignments 1a, 3a and 4a respectively.
 
-Constraint 6: maximum capacity adjusted with overtime and permanent expansion for both workstations
+\textbf{Constraint 6:} maximum capacity adjusted with overtime and permanent expansion for both workstations
 
 This first new constraint ensures that the production of the end product \(E2801\) in each period does not exceed the total available capacity of workstation X, which consists of the base capacity, the temporary increase through overtime \(OT_{X,t}\), and the permanent capacity expansion \(dx\).
 
@@ -839,7 +804,6 @@ x_{E2801,t} \leq 800 + OT_{X,t} + dx
 \qquad
 \forall t \in \{1,\ldots,30\}
 \]
-
 
 The second constraint limits the total processing time required on workstation Y by considering the processing times of components \(B1401\) and \(B2302\), while allowing capacity to be increased both temporarily through overtime \(OT_{Y,t}\) and structurally through a percentage-based expansion \(dy\_pct\).
 
@@ -1024,7 +988,7 @@ To assess the sensitivity of this approach to the chosen confidence level, the m
     \label{tab:ss_results}
     \begin{tabular}{l c c c c c}
         \toprule
-        \textbf{Design} & \textbf{Safety Stock} & \textbf{Total Cost (forecast)} & \textbf{Total Cost (realized)} & \textbf{\# backorder} & \textbf{Service level} \\
+        \textbf{Design} & \textbf{Safety Stock} & \textbf{Total Cost (forecast)} & \textbf{Total Cost (realized)} & \textbf{\# Backorders} & \textbf{Service level} \\
         \midrule
         Assignment 5b & (No) & \texteuro 510,076.60 & \texteuro 553,686.60 & 149 & 93.33\% \\
         95\% CSL     & 60   & \texteuro 520,462.60 & \texteuro 538,728.60 & 50  & 96.67\% \\
@@ -1039,6 +1003,40 @@ Both safety stock levels significantly reduce backorder costs under realized dem
 \textbf{Idea 2: Outsourcing production}
 
 \vspace{0.5em}
+\textbf{Motivation and approach}
+
+Part B4702 has both the longest lead time (5 weeks) and the highest BOM multiplier ($7 \times 3 = 21$ units per end product) of all components. This combination results in large batches that must be ordered well in advance, leading to substantial holding costs. This makes B4702 the most suitable candidate for outsourcing. By sourcing the component from an external supplier capable of faster delivery, the required inventory buffer decreases and holding costs are structurally reduced.
+
+In the proposed scenario, it is assumed that an external supplier can deliver B4702 within 1 week. The internal setup cost of \texteuro 2,500 per batch is eliminated, but is replaced by an order cost per batch placed with the external supplier. An order cost of \texteuro 500 per order is used. The robustness of this assumption was verified through a sensitivity analysis.
+
+\vspace{0.5em}
+\textbf{Determining the order cost: sensitivity analysis}
+
+Since no specific supplier data was available, the order cost was not derived using the EOQ formula (see appendix). That formula is only valid when the EOQ is actually the optimal batch size, a condition that does not hold here given the minimum lot sizes, capacity constraints and BOM structure present in the model \cite{Silver1998}. Instead, the impact of the order cost was tested directly by solving the model for values ranging from \texteuro 250 to \texteuro 1,500 per order in steps of \texteuro 250.
+
+Table 1 `outsourcing' (in appendix) shows that the total cost difference between \texteuro 250 and \texteuro 1,500 per order amounts to only \texteuro 6,250 over the full planning horizon, which is marginal relative to a total cost of approximately \texteuro 420,000. Based on this, \texteuro 500 is used as the central assumption; it is a conservative but realistic estimate that does not materially affect the conclusions.
+
+\vspace{0.5em}
+\textbf{Results compared to Assignment 5}
+
+With a lead time of 1 week and an order cost of \texteuro 500, outsourcing yields a total cost of \texteuro 420,963.80 based on forecasted demand, compared to \texteuro 510,076.60 in Assignment 5a. The reduction of nearly \texteuro 90,000 is entirely driven by a sharp decrease in holding costs (as intuitively expected given the reduction in lead time). As an additional benefit, the need for permanent capacity expansion on workstation X disappears (Investment X drops from \texteuro 2,000 to \texteuro 0), because the increased planning flexibility allows the optimizer to spread production more evenly. (See appendix: Table 2 `outsourcing')
+
+\vspace{0.5em}
+\textbf{Sensitivity analysis: effect of lead time}
+
+Since a lead time of 1 week represents an optimistic scenario, the impact of lead times of 2 to 4 weeks was also tested. A lead time of 5 weeks or more is not considered, as this corresponds to the current internal situation and therefore offers no benefit. Table 3 `outsourcing' (in appendix) shows that total cost based on forecasted demand increases as lead time grows longer, but remains well below the level of Assignment 5a in all cases. Even at a lead time of 4 weeks, the saving compared to 5a still amounts to approximately \texteuro 31,000. Notably, at lead times of 3 or 4 weeks the optimizer reverts to a larger permanent capacity expansion on workstation Y (20\% instead of 6.9\%) and reinvests in workstation X. This illustrates that a shorter lead time not only reduces holding costs, but also relieves capacity pressure by allowing production to be scheduled more flexibly.
+
+\vspace{0.5em}
+\textbf{Evaluation under realized demand and comparison with 5b}
+
+When the outsourcing plan ($L = 1$, order cost = \texteuro 500) is evaluated under realized demand, total cost increases from \texteuro 420,864 to \texteuro 464,574, mainly due to backorder costs of \texteuro 37,250. The service level (93.3\%) and fill rate (97.52\%) are identical to those of Assignment 5b (see table 4 `outsourcing' in appendix). The fact that service level and fill rate are unchanged is logical and worth explaining. The backorders in 5b (and 6b) occurred in weeks 26 and 30, not because B4702 was unavailable in time, but because E2801 inventory was insufficient at those moments to absorb the higher realized demand. In the 5b plan, B4702 stock was already fully depleted from week 6 onwards, the entire supply chain had been drained long before the backorders arose. The bottleneck therefore lay elsewhere in the system. Outsourcing consequently addresses a different problem than demand uncertainty at the level of the end product. This is not a weak conclusion, but rather a sign of critical insight: the measure is cost-efficient, but does not address the root cause of the backorders.
+
+\vspace{0.5em}
+\textbf{Break-even analysis: price premium over internal production cost}
+
+So far it has been assumed that the purchase price at the external supplier equals the internal production cost of B4702. In practice, an external party will typically charge a higher unit price. The break-even analysis therefore calculates up to what price premium per unit (on top of the internal production cost) outsourcing remains advantageous compared to Assignment 5b. Over the full planning horizon, a total of 78,847 units of B4702 must be purchased. Given a cost saving of approximately \texteuro 89,000 ($LT = 1$) at equal unit price, the purchase price can be at most \texteuro 1.13 per unit higher than the internal production cost before the benefit of outsourcing is fully eliminated. For longer lead times the margin is smaller. (See table 5 `outsourcing' in appendix)
+
+\vspace{0.5em}
 \textbf{Idea 3: Double exponential smoothing for demand forecasting}
 
 One candidate forecasting method to handle demand uncertainty is Holt's method (double exponential smoothing), which extends simple exponential smoothing by maintaining two smoothing equations: one for the level of the series ($S_t$) and one for the trend ($G_t$), controlled by two smoothing constants $\alpha$ and $\beta$ respectively. The $\tau$-step-ahead forecast is then given by $F_{t,t+\tau} = S_t + \tau G_t$, making it well-suited for data exhibiting a linear trend.
@@ -1047,6 +1045,7 @@ However, applying Holt's method to this problem is not appropriate for two reaso
 
 \vspace{0.5em}
 \textbf{Idea 4: Increasing the number of periods in the planning horizon}
+
 A key observation from the results of Assignments 1 through 5 is that backorders tend to concentrate in the final periods of the planning horizon. This occurs because the optimizer, knowing that no demand exists beyond period 30, deliberately runs down inventory toward the end of the horizon to minimize holding costs. In practice, however, the company will continue to operate beyond 30 weeks, and this so-called \textit{end-of-horizon effect} leads to an artificially optimistic plan that underperforms when evaluated against realized demand.
 
 To mitigate this effect, the planning horizon was extended from 30 to 35 weeks. The additional 5 weeks of demand data serve as a buffer: the optimizer now plans production beyond week 30, preventing it from draining inventory prematurely. All time-dependent costs (setup, holding, backorder, and overtime) over the 35-week horizon are then rescaled to a 30-week equivalent using factor $D = 30/35$ to allow a fair comparison with the original 30-week results from Assignment 5. Investment costs, being one-time expenditures independent of the horizon length, are not rescaled.
@@ -1068,7 +1067,7 @@ The key results are summarized in Table~\ref{tab:horizon_results}.
     \label{tab:horizon_results}
     \begin{tabular}{l c c c c c}
         \toprule
-        \textbf{Design} & \textbf{Total (forecast)} & \textbf{Total (realized)} & \textbf{\# backorder} & \textbf{Service level} & \textbf{Fill rate} \\
+        \textbf{Design} & \textbf{Total (forecast)} & \textbf{Total (realized)} & \textbf{\# Backorders} & \textbf{Service level} & \textbf{Fill rate} \\
         \midrule
         Assignment 5        & \texteuro 510,077 & \texteuro 553,687 & 149   & 93.3\% & 97.52\% \\
         Linear extrap.      & \texteuro 505,814 & \texteuro 604,858 & 91    & 93.3\% & 98.49\% \\
@@ -1079,7 +1078,7 @@ The key results are summarized in Table~\ref{tab:horizon_results}.
 
 On forecasted demand, both extended-horizon variants yield a lower total cost than Assignment~5, confirming that the longer planning horizon allows the optimizer to find more efficient production schedules. The cyclic variant achieves the largest reduction (-3.1\%), while the linear variant saves approximately 0.8\%.
 
-Under realized demand, however, the two methods diverge significantly. The cyclic variant reduces total cost by 3.3\% relative to Assignment~5 (\texteuro 535,141 vs.\ \texteuro 553,687) and cuts backorders from 149 to 67 units, improving the fill rate from 97.52\% to 98.89\%. The linear variant, by contrast, increases total cost by 9.2\% to \texteuro 604,858 with 91 backorders. This counterintuitive result occurs because the linearly extrapolated realized demand for weeks 31--35 consistently exceeds the extrapolated forecast (by approximately 20--25 units per week), causing the optimizer to under-plan production for those weeks and generating substantial backorders in the extended period. Since all costs---including these artificial backorders---are scaled by factor $D$, they inflate the 30-week equivalent cost.
+Under realized demand, however, the two methods diverge significantly. The cyclic variant reduces total cost by 3.3\% relative to Assignment~5 (\texteuro 535,141 vs.\ \texteuro 553,687) and cuts backorders from 149 to 67 units, improving the fill rate from 97.52\% to 98.89\%. The linear variant, by contrast, increases total cost by 9.2\% to \texteuro 604,858 with 91 backorders. This counterintuitive result occurs because the linearly extrapolated realized demand for weeks 31--35 consistently exceeds the extrapolated forecast (by approximately 20--25 units per week), causing the optimizer to under-plan production for those weeks and generating substantial backorders in the extended period. Since all costs, including these artificial backorders, are scaled by factor $D$, they inflate the 30-week equivalent cost.
 
 The cyclic variant avoids this issue because weeks 1--5 of our dataset have realized demand below the forecast, so the extended weeks act as a genuine buffer rather than a source of additional backorders.
 
@@ -1160,6 +1159,10 @@ The root cause is the same in both cases: backorders in weeks 26 and 30 arise fr
 Both analyses therefore confirm that capacity expansion alone is an ineffective strategy for handling demand uncertainty. The lowest realized cost is achieved at the Part 5a reference values (dx = 200 u, dy = 14.1\%). The real solution lies in planning logic, which motivates the safety stock approach discussed in Idea 1.
 
 \subsection{Conclusion 6a}
+
+Of the five strategies explored, capacity expansion and Holt's forecasting method proved ineffective, the former because backorders stem from a timing mismatch rather than a capacity shortage, the latter due to insufficient historical data. Outsourcing of B4702 achieves large cost savings but does not reduce backorders, since the bottleneck lies at the end-product level. The extended planning horizon reduces both cost and backorders by eliminating the end-of-horizon effect, but requires assumptions about future demand.
+ 
+The recommended design is \textbf{safety stock at the 99\% confidence level}. It directly addresses the root cause of uncertainty: forecast errors at the end-product level that propagate into backorders. With a safety stock of 84 units, total realized cost decreases by 3.1\% while backorders drop from 149 to 26 units and fill rate improves to 99.57\%. Outsourcing and the extended horizon remain valuable as complementary cost-reduction measures, but neither substitutes for an inventory buffer at the point of customer delivery.
 
 \subsection{6b. Other sources of uncertainty}
 
