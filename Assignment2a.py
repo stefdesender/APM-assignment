@@ -73,7 +73,7 @@ if model.status == GRB.OPTIMAL:
         ws = wb.active
         ws.title = SHEET_NAME
 
-    # ── Styles ────────────────────────────────────────────────────────────
+    #  Styles 
     NO_FILL    = PatternFill(fill_type=None)
     BLACK_FILL = PatternFill("solid", start_color="000000", end_color="000000")
     none_border = Border()
@@ -101,7 +101,7 @@ if model.status == GRB.OPTIMAL:
         for col in range(3, last_col + 1):
             ws.cell(r, col).border = bot_medium
 
-    # ── Column widths ──────────────────────────────────────────────────────
+    #  Column widths 
     ws.column_dimensions["A"].width = 1
     ws.column_dimensions["B"].width = 9
     for col in range(3, T + 4):
@@ -109,12 +109,12 @@ if model.status == GRB.OPTIMAL:
 
     last_col = T + 2
 
-    # ── Title ──────────────────────────────────────────────────────────────
+    #  Title 
     ws.row_dimensions[1].height = 26
     ws.merge_cells(f"B1:{get_column_letter(last_col)}1")
     plain(ws.cell(1, 2), "Assignment 2a - Optimal solution (finite capacity)", bold=True, size=13)
 
-    # ── Cost summary ───────────────────────────────────────────────────────
+    #  Cost summary 
     ws.row_dimensions[2].height = 4
     for r, (label, val, fmt, bold) in enumerate([
         ("Total cost",   model.ObjVal,  '"€"#,##0.00', True),
@@ -127,7 +127,7 @@ if model.status == GRB.OPTIMAL:
         plain(vc, round(val, 2), bold=bold, size=9, fmt=fmt)
         ws.merge_cells(f"C{r}:{get_column_letter(last_col)}{r}")
 
-    # ── Capacity parameters ────────────────────────────────────────────────
+    #  Capacity parameters 
     ws.row_dimensions[6].height = 4
     ws.row_dimensions[7].height = 16
     plain(ws.cell(7, 2), "Workstation X capacity", size=9, color="555555")
@@ -141,9 +141,7 @@ if model.status == GRB.OPTIMAL:
     plain(vc, f"{CAPACITY_Y} min / week  (3 min/B1401, 2 min/B2302)", size=9)
     ws.merge_cells(f"C8:{get_column_letter(last_col)}8")
 
-    # ══════════════════════════════════════════════════════════════════════
     # Production schedule
-    # ══════════════════════════════════════════════════════════════════════
     r = 10
     section_title(ws, r, last_col, "Production / order schedule (units)")
     r += 1
@@ -161,9 +159,7 @@ if model.status == GRB.OPTIMAL:
             plain(ws.cell(r, t + 2), val, bold=bool(val), size=9, align="center",
                   fmt='#,##0' if val != "" else None, border=bot_thin)
 
-    # ══════════════════════════════════════════════════════════════════════
     # Inventory levels
-    # ══════════════════════════════════════════════════════════════════════
     r += 2
     section_title(ws, r, last_col, "Inventory levels (end of period)")
     r += 1
@@ -182,9 +178,7 @@ if model.status == GRB.OPTIMAL:
                   color="000000" if v > 0 else "BBBBBB",
                   fmt='#,##0', border=bot_thin)
 
-    # ══════════════════════════════════════════════════════════════════════
     # Capacity usage
-    # ══════════════════════════════════════════════════════════════════════
     r += 2
     section_title(ws, r, last_col, "Capacity usage per week")
     r += 1
@@ -239,9 +233,7 @@ if model.status == GRB.OPTIMAL:
               size=9, align="center", color=col,
               fmt='0%' if pct > 0 else None, border=bot_thin)
 
-    # ══════════════════════════════════════════════════════════════════════
-    # Setup decisions
-    # ══════════════════════════════════════════════════════════════════════
+    #  Setup decisions
     r += 2
     section_title(ws, r, last_col, "Setup decisions")
     r += 1

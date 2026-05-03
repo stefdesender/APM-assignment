@@ -1,19 +1,7 @@
 """
-APM Project 2026 - Assignment 6a
+Assignment 6a
 Idea: handle demand uncertainty by OUTSOURCING part B4702 (highest lead time = 5).
 
-Structure mirrors assignment 5a:
-  - Optimisation on FORECASTED demand
-  - NO backorders in the model
-  - Same MIP structure, same capacity / overtime / permanent expansion logic
-  - Only B4702 parameters change (and the objective adds an order-cost term)
-
-Outsourcing changes for B4702:
-  - Lead time:  5 -> 1
-  - Setup cost: €2500 -> €0  (no internal setup any more)
-  - Order cost: +€250 per order placed   (administrative + transport + receipt)
-  - Min lot:    600 (kept; supplier MOQ)
-  - Holding:    €2.4/wk/unit (unchanged; we still hold the stock)
 """
 
 import gurobipy as gp
@@ -38,7 +26,7 @@ def clean_num(val, tol=1e-6):
     v = float(val)
     return 0.0 if abs(v) < tol else round(v, 6)
 
-# ── Capacity / overtime / expansion (identical to 5a) ─────────────────────
+#  Capacity / overtime / expansion (identical to 5a) 
 CAP_X_BASE     = 800
 CAP_X_MAX_EXP  = 200
 COST_EXP_X     = 10
@@ -54,26 +42,20 @@ COST_OT_Y      = 120
 PROC_X = {END_PRODUCT: 1}
 PROC_Y = {"B1401": 3, "B2302": 2}
 
-# ── Outsourcing parameters for B4702 ──────────────────────────────────────
+#  Outsourcing parameters for B4702 
 OUTSOURCED_PART      = "B4702"
 OUTSOURCED_LEAD_TIME = 1
-OUTSOURCED_MIN_LOT   = 600   # supplier MOQ - kept
+OUTSOURCED_MIN_LOT   = 600  
 
-# Order cost decomposition (no specific supplier data available):
-#   Administrative processing (PO, follow-up, invoicing) : ~€100
-#   Transport and handling (fixed per order)             : ~€100
-#   Receiving inspection and storage                     : ~€50
-# = €250 per order. Consistent with APQC / Hackett benchmarks.
-ORDER_COST_B4702 = 500  # EUR per order
 
-# Build local lead-time / min-lot / setup tables with B4702 modified
+ORDER_COST_B4702 = 500  
+
+
 LEAD_TIME_6A  = dict(LEAD_TIME);  LEAD_TIME_6A[OUTSOURCED_PART]  = OUTSOURCED_LEAD_TIME
 MIN_LOT_6A    = dict(MIN_LOT);    MIN_LOT_6A[OUTSOURCED_PART]    = OUTSOURCED_MIN_LOT
 SETUP_COST_6A = dict(SETUP_COST); SETUP_COST_6A[OUTSOURCED_PART] = 0  # replaced by order cost
 
-# ══════════════════════════════════════════════════════════════════════════
 # Model
-# ══════════════════════════════════════════════════════════════════════════
 model = gp.Model("APM_Assignment6a")
 periods = range(1, T + 1)
 parts   = PARTS
@@ -88,12 +70,7 @@ ot_y   = model.addVars(periods, name="ot_y", lb=0, ub=CAP_Y_OT_MAX)
 
 BIG_M = {i: sum(DEMAND_FORECAST) * 25 for i in parts}
 
-# Objective:
-#   setup cost         (zero for B4702 because outsourced)
-# + holding cost
-# + order cost B4702   (replaces setup cost for the outsourced part)
-# + permanent capacity expansion
-# + overtime
+
 model.setObjective(
     gp.quicksum(SETUP_COST_6A[i]*y[i,t] + HOLDING_COST[i]*I[i,t]
                 for i in parts for t in periods)
@@ -133,7 +110,7 @@ if model.status == GRB.OPTIMAL:
     cap_x_new  = CAP_X_BASE + dx_val
     cap_y_new  = CAP_Y_BASE * (1 + dy_pct_val/100)
 
-    # B4702 setup cost = 0 in 6a, so total_setup excludes it naturally
+    
     total_setup    = sum(SETUP_COST_6A[i] * y[i,t].X for i in parts for t in periods)
     total_holding  = sum(HOLDING_COST[i]   * I[i,t].X for i in parts for t in periods)
     n_orders_b4702 = sum(1 for t in periods if y[OUTSOURCED_PART, t].X > 0.5)
@@ -154,7 +131,7 @@ if model.status == GRB.OPTIMAL:
         ws = wb.active
         ws.title = SHEET_NAME
 
-    # ── Styles (identical to 5a) ─────────────────────────────────────────
+    #  Styles (identical to 5a) 
     NO_FILL    = PatternFill(fill_type=None)
     BLACK_FILL = PatternFill("solid", start_color="000000", end_color="000000")
     none_border = Border()
@@ -188,12 +165,12 @@ if model.status == GRB.OPTIMAL:
         ws.column_dimensions[get_column_letter(col)].width = 5.5
     last_col = T + 2
 
-    # ── Title ────────────────────────────────────────────────────────────
+    #  Title 
     ws.row_dimensions[1].height = 26
     ws.merge_cells(f"B1:{get_column_letter(last_col)}1")
     plain(ws.cell(1, 2), "Assignment 6a - Optimal solution (outsourcing B4702)", bold=True, size=13)
 
-    # ── Cost summary ─────────────────────────────────────────────────────
+    #  Cost summary 
     ws.row_dimensions[2].height = 4
     cost_rows = [
         ("Setup cost",          total_setup,                  False),
@@ -212,7 +189,7 @@ if model.status == GRB.OPTIMAL:
         plain(ws.cell(r, 3), round(clean_num(val), 2), bold=bold, size=9, fmt='"€"#,##0.00')
         ws.merge_cells(f"C{r}:{get_column_letter(last_col)}{r}")
 
-    # ── Outsourcing & expansion parameters ───────────────────────────────
+    #  Outsourcing & expansion parameters 
     ws.row_dimensions[12].height = 6
     param_rows = [
         ("B4702 lead time",        f"{OUTSOURCED_LEAD_TIME} period (was 5, outsourced)"),
@@ -233,9 +210,7 @@ if model.status == GRB.OPTIMAL:
         plain(ws.cell(r, 3), val, size=9, bold=("new base" in label or "B4702" in label))
         ws.merge_cells(f"C{r}:{get_column_letter(last_col)}{r}")
 
-    # ══════════════════════════════════════════════════════════════════════
     # Production / order schedule
-    # ══════════════════════════════════════════════════════════════════════
     r = 25
     section_title(ws, r, last_col, "Production / order schedule (units)")
     r += 1
@@ -255,9 +230,7 @@ if model.status == GRB.OPTIMAL:
             plain(ws.cell(r, t+2), val, bold=bool(val), size=9, align="center",
                   fmt='#,##0' if val != "" else None, border=bot_thin)
 
-    # ══════════════════════════════════════════════════════════════════════
     # Inventory levels
-    # ══════════════════════════════════════════════════════════════════════
     r += 2
     section_title(ws, r, last_col, "Inventory levels (end of period)")
     r += 1
@@ -276,9 +249,7 @@ if model.status == GRB.OPTIMAL:
                   color="000000" if v > 0 else "BBBBBB",
                   fmt='#,##0', border=bot_thin)
 
-    # ══════════════════════════════════════════════════════════════════════
     # Overtime usage
-    # ══════════════════════════════════════════════════════════════════════
     r += 2
     section_title(ws, r, last_col, "Overtime usage per week")
     r += 1
@@ -302,9 +273,7 @@ if model.status == GRB.OPTIMAL:
                   align="center", color=col,
                   fmt=fmt if v else None, border=bot_thin)
 
-    # ══════════════════════════════════════════════════════════════════════
     # Capacity utilisation
-    # ══════════════════════════════════════════════════════════════════════
     r += 2
     section_title(ws, r, last_col,
                   f"Capacity utilisation  (X base: {round(cap_x_new)} u/wk  |  Y base: {round(cap_y_new)} min/wk)")
@@ -340,9 +309,7 @@ if model.status == GRB.OPTIMAL:
                   align="center", color=col,
                   fmt=fmt if raw > 0 else None, border=bot_thin)
 
-    # ══════════════════════════════════════════════════════════════════════
     # Setup / order decisions
-    # ══════════════════════════════════════════════════════════════════════
     r += 2
     section_title(ws, r, last_col, "Setup / order decisions  (* = outsourced order)")
     r += 1
@@ -372,9 +339,7 @@ if model.status == GRB.OPTIMAL:
     print(f"  Overtime X:      EUR {clean_num(total_ot_x):,.2f}")
     print(f"  Overtime Y:      EUR {clean_num(total_ot_y):,.2f}")
 
-    # ══════════════════════════════════════════════════════════════════════
-    # SENSITIVITY ANALYSIS - Lead time B4702 (order cost fixed at €500)
-    # ══════════════════════════════════════════════════════════════════════
+    # SENSITIVITY ANALYSIS 
     print("\n" + "="*60)
     print("Running lead-time sensitivity analysis (order cost fixed at €500) ...")
     print("="*60)
@@ -452,7 +417,7 @@ if model.status == GRB.OPTIMAL:
             lt_results.append(res)
             print(f"    -> Total: €{res['total']:>10,.2f}  ({res['n_orders']} orders)")
 
-    # ── Write lead-time sensitivity sheet ────────────────────────────────
+    #  Write lead-time sensitivity sheet 
     LT_SHEET = "Output_6a_sens_LT"
     if LT_SHEET in wb.sheetnames:
         del wb[LT_SHEET]

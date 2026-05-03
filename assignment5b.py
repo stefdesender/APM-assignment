@@ -1,5 +1,5 @@
 """
-APM Project 2026 - Assignment 5b
+Assignment 5b
 """
 
 import gurobipy as gp
@@ -25,7 +25,7 @@ def clean_num(val, tol=1e-6):
     v = float(val)
     return 0.0 if abs(v) < tol else round(v, 6)
 
-# ── Re-solve 5a to get fixed plan ─────────────────────────────────────────
+#  Re-solve 5a to get fixed plan 
 CAP_X_BASE     = 800
 CAP_X_MAX_EXP  = 200
 COST_EXP_X     = 10
@@ -92,7 +92,7 @@ ot_y_vals  = {t: clean_num(ot_ya[t].X) for t in periods}
 schedule = {i: {t: xa[i,t].X for t in periods} for i in PARTS}
 setup_cost_fixed = sum(SETUP_COST[i] for i in PARTS for t in periods if xa[i,t].X > 0.5)
 
-# ── Simulate with realized demand ─────────────────────────────────────────
+#  Simulate with realized demand 
 inventory = {i: {} for i in PARTS}
 held      = {i: {} for i in PARTS}
 backorders = {t: 0.0 for t in periods}
@@ -145,7 +145,7 @@ for t in periods:
 fill_rate     = 1.0 - (total_new_bo / total_demand) if total_demand > 0 else 1.0
 units_on_time = total_demand - total_new_bo
 
-# ── Read reference results from OUTPUT.xlsx ───────────────────────────────
+#  Read reference results from OUTPUT.xlsx 
 def read_float(ws, row, col=3):
     try: return float(ws.cell(row, col).value)
     except: return None
@@ -178,7 +178,7 @@ try:
 except Exception:
     has_ref = False
 
-# ── Write to OUTPUT.xlsx ───────────────────────────────────────────────────
+#  Write to output file
 OUTPUT_FILE = "OUTPUT.xlsx"
 SHEET_NAME  = "Output_5b"
 
@@ -225,12 +225,12 @@ for col in range(3, T + 4):
     ws.column_dimensions[get_column_letter(col)].width = 5.5
 last_col = T + 2
 
-# ── Title ──────────────────────────────────────────────────────────────────
+#  Title 
 ws.row_dimensions[1].height = 26
 ws.merge_cells(f"B1:{get_column_letter(last_col)}1")
 plain(ws.cell(1, 2), "Assignment 5b - Realized demand evaluation (overtime + permanent expansion)", bold=True, size=13)
 
-# ── Cost summary ───────────────────────────────────────────────────────────
+#  Cost summary 
 ws.row_dimensions[2].height = 4
 cost_rows = [
     ("Setup cost",          setup_cost_fixed,  False),
@@ -251,7 +251,7 @@ for r, (label, val, bold) in enumerate(cost_rows, start=3):
     plain(ws.cell(r, 3), round(clean_num(val), 2), bold=bold, size=9, fmt=fmt)
     ws.merge_cells(f"C{r}:{get_column_letter(last_col)}{r}")
 
-# ── Service metrics ────────────────────────────────────────────────────────
+#  Service metrics 
 ws.row_dimensions[13].height = 6
 ws.row_dimensions[14].height = 14
 section_title(ws, 14, last_col, "Service metrics (end product)")
@@ -265,9 +265,7 @@ for r, (label, text, red) in enumerate([
     plain(ws.cell(r, 3), text, size=9, color="CC0000" if red else "000000")
     ws.merge_cells(f"C{r}:{get_column_letter(last_col)}{r}")
 
-# ══════════════════════════════════════════════════════════════════════════
 # Comparison table 1b / 2b / 3b / 4b / 5b
-# ══════════════════════════════════════════════════════════════════════════
 r = 19
 section_title(ws, r, last_col, "Comparison: 1b vs 2b vs 3b vs 4b vs 5b")
 r += 1
@@ -312,9 +310,7 @@ ws.column_dimensions["B"].width = 9
 for col in range(3, T + 4):
     ws.column_dimensions[get_column_letter(col)].width = 5.5
 
-# ══════════════════════════════════════════════════════════════════════════
 # Backorder schedule
-# ══════════════════════════════════════════════════════════════════════════
 r += 2
 section_title(ws, r, last_col, f"Backorder schedule - {END_PRODUCT} (end product only)")
 r += 1
@@ -334,9 +330,7 @@ for t in periods:
     else:
         plain(ws.cell(r, t+2), "", size=9, align="center", border=bot_thin)
 
-# ══════════════════════════════════════════════════════════════════════════
 # Demand vs delivered
-# ══════════════════════════════════════════════════════════════════════════
 r += 2
 section_title(ws, r, last_col, "Demand vs delivered (end product)")
 r += 1
@@ -365,9 +359,7 @@ for t in periods:
           fmt='#,##0', border=bot_thin)
     prev_bo = backorders[t]
 
-# ══════════════════════════════════════════════════════════════════════════
 # Production schedule
-# ══════════════════════════════════════════════════════════════════════════
 r += 2
 section_title(ws, r, last_col, "Production / order schedule (units, from 5a plan)")
 r += 1
@@ -385,9 +377,7 @@ for i in PARTS:
         plain(ws.cell(r, t+2), val, bold=bool(val), size=9, align="center",
               fmt='#,##0' if val != "" else None, border=bot_thin)
 
-# ══════════════════════════════════════════════════════════════════════════
 # Inventory levels (realized)
-# ══════════════════════════════════════════════════════════════════════════
 r += 2
 section_title(ws, r, last_col, "Inventory levels (end of period, realized)")
 r += 1
@@ -406,9 +396,7 @@ for i in PARTS:
               color="BBBBBB" if v == 0 else "000000",
               fmt='#,##0', border=bot_thin)
 
-# ══════════════════════════════════════════════════════════════════════════
 # Overtime usage (from 5a plan)
-# ══════════════════════════════════════════════════════════════════════════
 r += 2
 section_title(ws, r, last_col, "Overtime usage (from 5a plan, unchanged)")
 r += 1
@@ -431,9 +419,7 @@ for label, vals, fmt in [
               align="center", color=col,
               fmt=fmt if v else None, border=bot_thin)
 
-# ══════════════════════════════════════════════════════════════════════════
 # Setup decisions
-# ══════════════════════════════════════════════════════════════════════════
 r += 2
 section_title(ws, r, last_col, "Setup decisions")
 r += 1

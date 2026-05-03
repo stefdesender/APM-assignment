@@ -12,7 +12,7 @@ from input_data import (
     DEMAND_REALIZED, BACKORDER_COST
 )
 
-# ── Re-solve 2a to get schedule ────────────────────────────────────────────
+#  Re-solve 2a to get schedule 
 import gurobipy as gp
 from gurobipy import GRB
 from input_data import DEMAND_FORECAST, MIN_LOT
@@ -58,7 +58,7 @@ model.optimize()
 schedule = {i: {t: x[i,t].X for t in periods} for i in PARTS}
 setup_cost_2a = sum(SETUP_COST[i]*y[i,t].X for i in PARTS for t in periods)
 
-# ── Simulate with realized demand ─────────────────────────────────────────
+#  Simulate with realized demand 
 inventory  = {i: float(INIT_INV[i]) for i in PARTS}
 backorders = {t: 0.0 for t in periods}
 delivered  = {t: 0.0 for t in periods}
@@ -108,7 +108,7 @@ service_level   = periods_fully_met / T * 100
 fill_rate       = total_delivered / total_demand * 100
 total_cost      = setup_cost + holding_cost + backorder_cost_total
 
-# ── Try loading 1b results for comparison ────────────────────────────────
+#  Try loading 1b results for comparison 
 try:
     wb_out = load_workbook("OUTPUT.xlsx", data_only=True)
     ws_1b  = wb_out["Output_1b"]
@@ -126,7 +126,7 @@ try:
 except Exception:
     has_1b = False
 
-# ── Write to OUTPUT.xlsx ───────────────────────────────────────────────────
+#  Write to output file
 OUTPUT_FILE = "OUTPUT.xlsx"
 SHEET_NAME  = "Output_2b"
 
@@ -140,7 +140,7 @@ else:
     ws = wb.active
     ws.title = SHEET_NAME
 
-# ── Styles ────────────────────────────────────────────────────────────────
+#  Styles 
 NO_FILL    = PatternFill(fill_type=None)
 BLACK_FILL = PatternFill("solid", start_color="000000", end_color="000000")
 none_border = Border()
@@ -168,7 +168,7 @@ def section_title(ws, r, last_col, text):
     for col in range(3, last_col + 1):
         ws.cell(r, col).border = bot_medium
 
-# ── Column widths ──────────────────────────────────────────────────────────
+#  Column widths 
 ws.column_dimensions["A"].width = 1
 ws.column_dimensions["B"].width = 9
 for col in range(3, T + 4):
@@ -176,12 +176,12 @@ for col in range(3, T + 4):
 
 last_col = T + 2
 
-# ── Title ──────────────────────────────────────────────────────────────────
+#  Title 
 ws.row_dimensions[1].height = 26
 ws.merge_cells(f"B1:{get_column_letter(last_col)}1")
 plain(ws.cell(1, 2), "Assignment 2b - Realized demand evaluation (finite capacity)", bold=True, size=13)
 
-# ── Cost summary ───────────────────────────────────────────────────────────
+#  Cost summary 
 ws.row_dimensions[2].height = 4
 for r, (label, val, fmt, bold) in enumerate([
     ("Setup cost",      setup_cost,           '"€"#,##0.00', False),
@@ -195,7 +195,7 @@ for r, (label, val, fmt, bold) in enumerate([
     plain(vc, round(val, 2), bold=bold, size=9, fmt=fmt)
     ws.merge_cells(f"C{r}:{get_column_letter(last_col)}{r}")
 
-# ── Service metrics ────────────────────────────────────────────────────────
+#  Service metrics 
 ws.row_dimensions[7].height = 6
 ws.row_dimensions[8].height = 14
 section_title(ws, 8, last_col, "Service metrics (end product)")
@@ -218,15 +218,12 @@ plain(ws.cell(11, 3), f"{total_backorder:,.0f} units", size=9,
       color="CC0000" if total_backorder > 0 else "000000")
 ws.merge_cells(f"C11:{get_column_letter(last_col)}11")
 
-# ══════════════════════════════════════════════════════════════════════════
 # Comparison table 1b vs 2b
-# ══════════════════════════════════════════════════════════════════════════
 r = 13
 section_title(ws, r, last_col, "Comparison: 1b (infinite capacity) vs 2b (finite capacity)")
 r += 1
 ws.row_dimensions[r].height = 16
 
-# Use 5 fixed columns for the comparison table
 COL_METRIC = 2
 COL_1B     = 3
 COL_2B     = 4
@@ -268,9 +265,7 @@ for idx, (label, v1b, v2b, fmt) in enumerate(rows_cmp, start=1):
 
     plain(ws.cell(r, COL_2B), round(v2b, 2), size=9, align="right", fmt=fmt, border=bot_thin)
 
-# ══════════════════════════════════════════════════════════════════════════
 # Production schedule
-# ══════════════════════════════════════════════════════════════════════════
 r += 2
 section_title(ws, r, last_col, "Production / order schedule (units)")
 r += 1
@@ -288,9 +283,7 @@ for i in PARTS:
         plain(ws.cell(r, t + 2), val, bold=bool(val), size=9, align="center",
               fmt='#,##0' if val != "" else None, border=bot_thin)
 
-# ══════════════════════════════════════════════════════════════════════════
 # Inventory levels (realized)
-# ══════════════════════════════════════════════════════════════════════════
 r += 2
 section_title(ws, r, last_col, "Inventory levels (end of period, realized)")
 r += 1
@@ -309,9 +302,7 @@ for i in PARTS:
         plain(ws.cell(r, t + 2), v, size=9, align="center",
               color=col, fmt='#,##0;-#,##0', border=bot_thin)
 
-# ══════════════════════════════════════════════════════════════════════════
 # Backorder schedule (end product only)
-# ══════════════════════════════════════════════════════════════════════════
 r += 2
 section_title(ws, r, last_col, f"Backorder schedule - {END_PRODUCT} (end product only)")
 r += 1
@@ -331,9 +322,7 @@ for t in periods:
     else:
         plain(ws.cell(r, t + 2), "", size=9, align="center", border=bot_thin)
 
-# ══════════════════════════════════════════════════════════════════════════
 # Demand vs delivered
-# ══════════════════════════════════════════════════════════════════════════
 r += 2
 section_title(ws, r, last_col, "Demand vs delivered (end product)")
 r += 1
@@ -359,9 +348,7 @@ for t in periods:
           color="CC0000" if shortage else "000000",
           fmt='#,##0', border=bot_thin)
 
-# ══════════════════════════════════════════════════════════════════════════
 # Setup decisions
-# ══════════════════════════════════════════════════════════════════════════
 r += 2
 section_title(ws, r, last_col, "Setup decisions")
 r += 1

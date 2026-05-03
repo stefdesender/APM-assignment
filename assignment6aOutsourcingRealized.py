@@ -1,18 +1,7 @@
 """
-APM Project 2026 - Assignment 6b
+Assignment 6b
 Evaluate the 6a outsourcing plan under REALIZED demand.
 
-Structure mirrors assignment 5b:
-  - Re-solve 6a on forecasted demand to get a fixed plan
-  - Freeze that plan (schedule, overtime, investments)
-  - Simulate inventory evolution with realized demand
-  - End product can incur backorders (€250/unit/period)
-  - Compute service level + fill rate using 5b's incremental-backorder formula
-
-Sensitivity:
-  - Repeat the entire process for B4702 lead times of 1, 2, 3, 4 weeks
-    (order cost fixed at €500). Shows how much the kortere lead time helps
-    against demand uncertainty.
 """
 
 import gurobipy as gp
@@ -41,7 +30,7 @@ def clean_num(val, tol=1e-6):
     return 0.0 if abs(v) < tol else round(v, 6)
 
 
-# ── Capacity / overtime / expansion (identical to 5a/5b) ─────────────────
+#  Capacity / overtime / expansion (identical to 5a/5b) 
 CAP_X_BASE     = 800
 CAP_X_MAX_EXP  = 200
 COST_EXP_X     = 10
@@ -57,18 +46,16 @@ COST_OT_Y      = 120
 PROC_X = {END_PRODUCT: 1}
 PROC_Y = {"B1401": 3, "B2302": 2}
 
-# ── Outsourcing parameters for B4702 ─────────────────────────────────────
+#  Outsourcing parameters for B4702 
 OUTSOURCED_PART      = "B4702"
 DEFAULT_LEAD_TIME    = 1
 OUTSOURCED_MIN_LOT   = 600
-ORDER_COST_B4702     = 500   # consistent with 6a main run
+ORDER_COST_B4702     = 500   
 
 periods = range(1, T + 1)
 
 
-# ══════════════════════════════════════════════════════════════════════════
 # Helper: solve 6a with given lead time, return the fixed plan
-# ══════════════════════════════════════════════════════════════════════════
 def solve_6a_plan(lead_time_b4702, order_cost=ORDER_COST_B4702, silent=True):
     """Solve the 6a model with a specific B4702 lead time and return the plan."""
     LEAD_TIME_LOC  = dict(LEAD_TIME);  LEAD_TIME_LOC[OUTSOURCED_PART]  = lead_time_b4702
@@ -133,9 +120,7 @@ def solve_6a_plan(lead_time_b4702, order_cost=ORDER_COST_B4702, silent=True):
     }
 
 
-# ══════════════════════════════════════════════════════════════════════════
-# Helper: simulate 6a plan against realized demand (5b-style)
-# ══════════════════════════════════════════════════════════════════════════
+# Helper: simulate 6a plan against realized demand 
 def simulate_realized(plan):
     """Apply the frozen 6a plan to realized demand and compute all metrics."""
     schedule  = plan["schedule"]
@@ -148,7 +133,7 @@ def simulate_realized(plan):
     backorders = {t: 0.0 for t in periods}
     net_end    = {}
 
-    # All non-end-product parts: simple inventory simulation
+    
     for i in PARTS:
         if i == END_PRODUCT:
             continue
@@ -162,7 +147,7 @@ def simulate_realized(plan):
             held[i][t]      = clean_num(max(0.0, net))
             inv_prev = net
 
-    # End product: backorder simulation
+   
     inv_prev = float(INIT_INV[END_PRODUCT])
     bo_prev  = 0.0
     for t in periods:
@@ -195,7 +180,7 @@ def simulate_realized(plan):
                           + total_backorder + invest_X + invest_Y
                           + total_ot_x + total_ot_y)
 
-    # Service metrics (5b-style)
+    # Service metrics 
     periods_no_bo = sum(1 for t in periods if backorders[t] == 0)
     service_level = periods_no_bo / T
     total_demand  = sum(DEMAND_REALIZED)
@@ -238,9 +223,7 @@ def simulate_realized(plan):
     }
 
 
-# ══════════════════════════════════════════════════════════════════════════
 # Main: run the base 6b case (lead time 1) + lead-time sensitivity
-# ══════════════════════════════════════════════════════════════════════════
 print("="*60)
 print("Assignment 6b - base case (lead time 1)")
 print("="*60)
@@ -265,9 +248,7 @@ for lt in LEAD_TIME_SWEEP:
               f"BO units: {res_lt['total_new_bo']:>5.0f}")
 
 
-# ══════════════════════════════════════════════════════════════════════════
 # Excel output
-# ══════════════════════════════════════════════════════════════════════════
 OUTPUT_FILE = "OUTPUT.xlsx"
 
 if os.path.exists(OUTPUT_FILE):
@@ -276,7 +257,7 @@ else:
     wb = Workbook()
     wb.remove(wb.active)
 
-# ── Styles (identical to 5b) ─────────────────────────────────────────────
+#  Styles 
 NO_FILL    = PatternFill(fill_type=None)
 BLACK_FILL = PatternFill("solid", start_color="000000", end_color="000000")
 none_border = Border()
@@ -308,9 +289,7 @@ def section_title(ws, r, last_col, text):
         ws.cell(r, col).border = bot_medium
 
 
-# ══════════════════════════════════════════════════════════════════════════
-# Sheet: Output_6b (main case)
-# ══════════════════════════════════════════════════════════════════════════
+# Sheet: Output_6b 
 SHEET_MAIN = "Output_6b"
 if SHEET_MAIN in wb.sheetnames:
     del wb[SHEET_MAIN]
@@ -490,9 +469,7 @@ for i in PARTS:
               bold=True, size=9, align="center", border=bot_thin)
 
 
-# ══════════════════════════════════════════════════════════════════════════
 # Sheet: Output_6b_sens_LT (lead-time sensitivity under realized demand)
-# ══════════════════════════════════════════════════════════════════════════
 SHEET_LT = "Output_6b_sens_LT"
 if SHEET_LT in wb.sheetnames:
     del wb[SHEET_LT]

@@ -1,5 +1,5 @@
 """
-APM Project 2026 - Assignment 4b
+Assignment 4b
 """
 
 import gurobipy as gp
@@ -31,7 +31,7 @@ def get_parents(part):
 def clean(val):
     return 0 if abs(val) < 1e-6 else round(val)
 
-# ── Re-solve 4a to get fixed plan ─────────────────────────────────────────
+#  Re-solve 4a to get fixed plan 
 from input_data import DEMAND_FORECAST as DF
 from input_data import MIN_LOT
 
@@ -81,7 +81,7 @@ cost_4a    = m4a.ObjVal
 fixed_x = {i: {t: xa[i,t].X for t in periods} for i in PARTS}
 setup_cost_fixed = sum(SETUP_COST[i] for i in PARTS for t in periods if xa[i,t].X > 0.5)
 
-# ── Evaluation model ───────────────────────────────────────────────────────
+#  Evaluation model 
 model = gp.Model("APM_4b")
 model.setParam("OutputFlag", 0)
 
@@ -123,7 +123,7 @@ for t in periods:
 total_new_bo = sum(new_bo)
 fill_rate     = 1.0 - total_new_bo / total_realized
 
-# ── Read reference results from OUTPUT.xlsx ───────────────────────────────
+#  Read reference results from OUTPUT.xlsx 
 def read_float(ws, row, col=3):
     try:
         return float(ws.cell(row, col).value)
@@ -160,7 +160,7 @@ try:
 except Exception:
     has_ref = False
 
-# ── Write to OUTPUT.xlsx ───────────────────────────────────────────────────
+#  Write to output file
 OUTPUT_FILE = "OUTPUT.xlsx"
 SHEET_NAME  = "Output_4b"
 
@@ -174,7 +174,7 @@ else:
     ws = wb.active
     ws.title = SHEET_NAME
 
-# ── Styles ────────────────────────────────────────────────────────────────
+#  Styles 
 NO_FILL    = PatternFill(fill_type=None)
 BLACK_FILL = PatternFill("solid", start_color="000000", end_color="000000")
 none_border = Border()
@@ -208,12 +208,12 @@ for col in range(3, T + 4):
     ws.column_dimensions[get_column_letter(col)].width = 5.5
 last_col = T + 2
 
-# ── Title ──────────────────────────────────────────────────────────────────
+#  Title 
 ws.row_dimensions[1].height = 26
 ws.merge_cells(f"B1:{get_column_letter(last_col)}1")
 plain(ws.cell(1, 2), "Assignment 4b - Realized demand evaluation (permanent expansion)", bold=True, size=13)
 
-# ── Cost summary ───────────────────────────────────────────────────────────
+#  Cost summary 
 ws.row_dimensions[2].height = 4
 cost_rows = [
     ("Setup cost",          setup_cost_fixed, False),
@@ -232,7 +232,7 @@ for r, (label, val, bold) in enumerate(cost_rows, start=3):
     plain(ws.cell(r, 3), round(val, 2), bold=bold, size=9, fmt=fmt)
     ws.merge_cells(f"C{r}:{get_column_letter(last_col)}{r}")
 
-# ── Service metrics ────────────────────────────────────────────────────────
+#  Service metrics 
 ws.row_dimensions[11].height = 6
 ws.row_dimensions[12].height = 14
 section_title(ws, 12, last_col, "Service metrics (end product)")
@@ -246,9 +246,7 @@ for r, (label, text, red) in enumerate([
     plain(ws.cell(r, 3), text, size=9, color="CC0000" if red else "000000")
     ws.merge_cells(f"C{r}:{get_column_letter(last_col)}{r}")
 
-# ══════════════════════════════════════════════════════════════════════════
 # Comparison table 1b / 2b / 3b / 4b
-# ══════════════════════════════════════════════════════════════════════════
 r = 17
 section_title(ws, r, last_col, "Comparison: 1b vs 2b vs 3b vs 4b")
 r += 1
@@ -288,9 +286,8 @@ for label, key, fmt in cmp_rows:
     plain(ws.cell(r, 6), round(vals_4b[key], 2), bold=True,
           size=9, align="right", fmt=fmt, border=bot_thin)
 
-# ══════════════════════════════════════════════════════════════════════════
 # Backorder detail per period
-# ══════════════════════════════════════════════════════════════════════════
+
 # reset col widths for week table
 ws.column_dimensions["B"].width = 9
 for col in range(3, T + 4):
@@ -315,9 +312,7 @@ for t in periods:
     else:
         plain(ws.cell(r, t+2), "", size=9, align="center", border=bot_thin)
 
-# ══════════════════════════════════════════════════════════════════════════
 # Demand vs delivered
-# ══════════════════════════════════════════════════════════════════════════
 r += 2
 section_title(ws, r, last_col, "Demand vs delivered (end product)")
 r += 1
@@ -344,9 +339,7 @@ for t in periods:
           color="CC0000" if shortage else "000000",
           fmt='#,##0', border=bot_thin)
 
-# ══════════════════════════════════════════════════════════════════════════
 # Production schedule
-# ══════════════════════════════════════════════════════════════════════════
 r += 2
 section_title(ws, r, last_col, "Production / order schedule (units, from 4a plan)")
 r += 1
@@ -364,9 +357,7 @@ for i in PARTS:
         plain(ws.cell(r, t+2), val, bold=bool(val), size=9, align="center",
               fmt='#,##0' if val != "" else None, border=bot_thin)
 
-# ══════════════════════════════════════════════════════════════════════════
 # Inventory levels (realized)
-# ══════════════════════════════════════════════════════════════════════════
 r += 2
 section_title(ws, r, last_col, "Inventory levels (end of period, realized)")
 r += 1
@@ -385,9 +376,7 @@ for i in PARTS:
               color="BBBBBB" if v == 0 else "000000",
               fmt='#,##0', border=bot_thin)
 
-# ══════════════════════════════════════════════════════════════════════════
-# Capacity utilisation
-# ══════════════════════════════════════════════════════════════════════════
+#  Capacity utilisation
 r += 2
 section_title(ws, r, last_col,
               f"Capacity utilisation  (X: {round(cap_x_new)} u/wk  |  Y: {round(cap_y_new)} min/wk)")
@@ -415,9 +404,7 @@ for label, fn, cap, fmt in cap_rows:
               size=9, align="center", color=col,
               fmt=fmt if raw>0 else None, border=bot_thin)
 
-# ══════════════════════════════════════════════════════════════════════════
-# Setup decisions
-# ══════════════════════════════════════════════════════════════════════════
+#  Setup decisions
 r += 2
 section_title(ws, r, last_col, "Setup decisions")
 r += 1

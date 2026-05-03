@@ -1,12 +1,6 @@
 """
 Demand extrapolation generator
-==============================
-Reads the 30-week demand data from input_data.py, fits a linear
-regression to both forecast and realized demand, extrapolates 5
-extra weeks, and writes a new input_data_35periods.py file with
-35 weeks.
 
-Also saves a visualization of the extrapolation as a PNG.
 """
 
 import numpy as np
@@ -17,7 +11,7 @@ from input_data import (
     DEMAND_FORECAST, DEMAND_REALIZED
 )
 
-# ─── Linear regression on the 30-week data ────────────────────────────
+#  Linear regression on the 30-week data 
 weeks_observed = np.arange(1, 31)
 forecast_30 = np.array(DEMAND_FORECAST)
 realized_30 = np.array(DEMAND_REALIZED)
@@ -25,12 +19,12 @@ realized_30 = np.array(DEMAND_REALIZED)
 a_f, b_f = np.polyfit(weeks_observed, forecast_30, 1)
 a_r, b_r = np.polyfit(weeks_observed, realized_30, 1)
 
-# ─── Predict weeks 31 through 35 ──────────────────────────────────────
+#  Predict weeks 31 through 35 
 weeks_future = np.arange(31, 36)
 forecast_future = [int(round(a_f * w + b_f)) for w in weeks_future]
 realized_future = [int(round(a_r * w + b_r)) for w in weeks_future]
 
-# ─── Print results to terminal ────────────────────────────────────────
+#  Print results to terminal 
 print("=" * 60)
 print("LINEAR EXTRAPOLATION TO 35 WEEKS")
 print("=" * 60)
@@ -41,11 +35,11 @@ print("-" * 30)
 for i, w in enumerate(weeks_future):
     print(f"{w:<6}{forecast_future[i]:>12}{realized_future[i]:>12}")
 
-# ─── Build full 35-week lists ─────────────────────────────────────────
+#  Build full 35-week lists 
 DEMAND_FORECAST_35 = [int(v) for v in forecast_30] + forecast_future
 DEMAND_REALIZED_35 = [int(v) for v in realized_30] + realized_future
 
-# ─── Write input_data_35periods.py ────────────────────────────────────
+#  Write input_data_35periods.py 
 def fmt_dict(d, indent=4):
     """Format a dict as a nicely indented multi-line literal."""
     pad = " " * indent
@@ -109,14 +103,14 @@ with open(OUTPUT_FILE, "w", encoding="utf-8") as f:
 
 print(f"\n>>> Written: {OUTPUT_FILE}")
 
-# ─── Visualization (saved as PNG, not shown) ──────────────────────────
+#  Visualization (saved as PNG, not shown) 
 fig, axes = plt.subplots(2, 1, figsize=(11, 7), sharex=True)
 
 weeks_all = np.arange(1, 36)
 trend_f = a_f * weeks_all + b_f
 trend_r = a_r * weeks_all + b_r
 
-# ── Top plot: Forecast ──
+#  Top plot: Forecast 
 ax = axes[0]
 ax.scatter(weeks_observed, forecast_30, color='#378ADD', s=35, zorder=3,
            label='Forecast (week 1-30)')
@@ -130,7 +124,7 @@ ax.set_title('Forecasted demand: 30 weeks of data + linear extrapolation')
 ax.legend(loc='upper left', fontsize=9)
 ax.grid(True, alpha=0.3)
 
-# ── Bottom plot: Realized ──
+#  Bottom plot: Realized 
 ax = axes[1]
 ax.scatter(weeks_observed, realized_30, color='#378ADD', s=35, zorder=3,
            label='Realized (week 1-30)')

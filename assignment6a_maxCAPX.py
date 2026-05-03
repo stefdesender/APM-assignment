@@ -1,17 +1,7 @@
 """
-APM Project 2026 - Assignment 6a
+Assignment 6a
 Idea: Sensitivity analysis on the permanent expansion of Workstation X.
 
-In assignment 5a the optimizer chose the maximum allowed expansion of 200 units
-for workstation X, meaning it was hitting the upper bound. This analysis forces
-dx to exactly a given value and sweeps from below to above 200 units to show
-the impact on forecast and realized costs, service level and fill rate.
-
-For each scenario:
-  1) Solve the 5a-style model with dx fixed to the scenario value
-  2) Simulate on realized demand (5b-style) → compute total cost, SL, FR
-Reference: dx = 200 units (optimal from assignment 5a, was hitting upper bound)
-dy_pct is fixed at 14.1% (5a optimal) throughout all scenarios.
 """
 
 import gurobipy as gp
@@ -28,7 +18,7 @@ from input_data import (
     DEMAND_FORECAST, DEMAND_REALIZED, BACKORDER_COST
 )
 
-# ── helpers ───────────────────────────────────────────────────────────────────
+#  helpers 
 def get_parents(part):
     parents = {}
     for parent, children in BOM.items():
@@ -40,13 +30,13 @@ def clean_num(val, tol=1e-6):
     v = float(val)
     return 0.0 if abs(v) < tol else round(v, 6)
 
-# ── constants (identical to 5a/5b) ───────────────────────────────────────────
+#  constants (identical to 5a/5b) 
 CAP_X_BASE     = 800
 COST_EXP_X     = 10
 CAP_X_OT_MAX   = 300
 COST_OT_X      = 2
 
-CAP_Y_BASE     = 60 * 24 * 7 - 80          # 10 000 min/week
+CAP_Y_BASE     = 60 * 24 * 7 - 80          
 COST_EXP_Y_PCT = 1_500
 CAP_Y_OT_MAX   = 38
 COST_OT_Y      = 120
@@ -60,18 +50,17 @@ PROC_Y = {"B1401": 3, "B2302": 2}
 periods = range(1, T + 1)
 BIG_M   = {i: sum(DEMAND_FORECAST) * 25 for i in PARTS}
 
-# ── sensitivity range ─────────────────────────────────────────────────────────
-# Reference: dx = 200 (5a optimal, was hitting the upper bound).
-# 2 values below (step 50) and 8 values above.
+#  sensitivity range 
+
 REF_DX     = 200
 STEP       = 50
 CAP_VALUES = (
     [REF_DX - 2*STEP, REF_DX - 1*STEP]
     + [REF_DX + i*STEP for i in range(0, 9)]
 )
-# → [100, 150, 200, 250, 300, 350, 400, 450, 500, 550, 600]
 
-# ── solve one scenario ────────────────────────────────────────────────────────
+
+#  solve one scenario 
 def solve_scenario(dx_fixed: int) -> dict | None:
     m = gp.Model(f"APM_6a_dx{dx_fixed}")
     m.setParam("OutputFlag", 0)
@@ -132,7 +121,7 @@ def solve_scenario(dx_fixed: int) -> dict | None:
     )
 
 
-# ── simulate realized demand ──────────────────────────────────────────────────
+#  simulate realized demand 
 def simulate_realized(res: dict) -> dict:
     schedule = res["schedule"]
 
@@ -206,7 +195,7 @@ def simulate_realized(res: dict) -> dict:
     )
 
 
-# ── run all scenarios ─────────────────────────────────────────────────────────
+#  run all scenarios 
 print("Running sensitivity analysis on permanent expansion of Workstation X ...")
 print(f"  dy_pct fixed at {DY_FIXED}% (5a optimal) for all scenarios")
 print(f"{'dx (units)':>12}  {'Cost forecast':>14}  {'Cost realized':>14}  "
@@ -230,7 +219,7 @@ for dx_val in CAP_VALUES:
           f"€ {sim['backorder_cost']:>10,.2f}")
 
 
-# ── Excel output ──────────────────────────────────────────────────────────────
+#  Excel output 
 OUTPUT_FILE = "OUTPUT.xlsx"
 SHEET_NAME  = "Output_6a_maxX"
 
@@ -300,7 +289,7 @@ plain(ws.cell(2,2),
 
 best_realized = min(res["sim"]["total_cost"] for res in results)
 
-# ── Summary table ─────────────────────────────────────────────────────────────
+#  Summary table 
 r = 4
 section_title(ws, r, LAST_COL,
               "Sensitivity table: forecast cost vs realized cost per dx scenario")
@@ -337,7 +326,7 @@ for res in results:
         plain(ws.cell(r, c), val, bold=bold, align=align,
               fmt=fmt, color=color, border=full_thin, fill=row_fill)
 
-# ── Full cost breakdown ───────────────────────────────────────────────────────
+#  Full cost breakdown 
 r += 2
 section_title(ws, r, LAST_COL, "Full cost breakdown (realized demand)")
 r += 1
@@ -372,9 +361,9 @@ for res in results:
               border=full_thin, fill=row_fill,
               color="CC0000" if (c == 5 and is_money and val > 0) else "000000")
 
-# ── Backorders per period ─────────────────────────────────────────────────────
+#  Backorders per period 
 r += 2
-BO_LAST_COL = 2 + T + 1          # label col + T period cols + total col
+BO_LAST_COL = 2 + T + 1        
 section_title(ws, r, BO_LAST_COL, "Backorders per period (units, realized demand)")
 r += 1
 ws.row_dimensions[r].height = 18
@@ -414,7 +403,7 @@ for res in results:
           color="CC0000" if total_bo > 0 else "000000")
 ws.column_dimensions[get_column_letter(BO_LAST_COL)].width = 12
 
-# ── Chart data + charts ───────────────────────────────────────────────────────
+#  Chart data + charts 
 r += 2
 section_title(ws, r, LAST_COL, "Charts")
 cds = r + 1
