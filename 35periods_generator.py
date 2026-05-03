@@ -1,12 +1,6 @@
 """
 35-period demand generator
-==========================
-Generates two input files with 35 weeks of demand data:
 
-1. input_data_35periods_linear.py  — weeks 31-35 via linear extrapolation
-2. input_data_35periods_cyclic.py  — weeks 31-35 = repeat of weeks 1-5
-
-Also saves a comparison plot as PNG.
 """
 
 import numpy as np
@@ -17,24 +11,24 @@ from input_data import (
     DEMAND_FORECAST, DEMAND_REALIZED
 )
 
-# ─── Original 30-week data ────────────────────────────────────────────
+#  Original 30-week data 
 weeks_observed = np.arange(1, 31)
 forecast_30 = np.array(DEMAND_FORECAST)
 realized_30 = np.array(DEMAND_REALIZED)
 weeks_future = np.arange(31, 36)
 
-# ─── Method 1: Linear extrapolation ──────────────────────────────────
+#  Method 1: Linear extrapolation 
 a_f, b_f = np.polyfit(weeks_observed, forecast_30, 1)
 a_r, b_r = np.polyfit(weeks_observed, realized_30, 1)
 
 linear_forecast = [int(round(a_f * w + b_f)) for w in weeks_future]
 linear_realized = [int(round(a_r * w + b_r)) for w in weeks_future]
 
-# ─── Method 2: Cyclic (repeat weeks 1-5) ─────────────────────────────
+#  Method 2: Cyclic (repeat weeks 1-5) 
 cyclic_forecast = [int(v) for v in forecast_30[:5]]
 cyclic_realized = [int(v) for v in realized_30[:5]]
 
-# ─── Print comparison to terminal ─────────────────────────────────────
+#  Print comparison to terminal 
 print("=" * 70)
 print("35-PERIOD DEMAND GENERATION: LINEAR vs CYCLIC")
 print("=" * 70)
@@ -53,13 +47,13 @@ cyc_gaps = [cyclic_realized[i] - cyclic_forecast[i] for i in range(5)]
 print(f"  Linear:  {lin_gaps}  (avg {np.mean(lin_gaps):+.1f})")
 print(f"  Cyclic:  {cyc_gaps}  (avg {np.mean(cyc_gaps):+.1f})")
 
-# ─── Build full 35-week lists ─────────────────────────────────────────
+#  Build full 35-week lists 
 linear_forecast_35 = [int(v) for v in forecast_30] + linear_forecast
 linear_realized_35 = [int(v) for v in realized_30] + linear_realized
 cyclic_forecast_35 = [int(v) for v in forecast_30] + cyclic_forecast
 cyclic_realized_35 = [int(v) for v in realized_30] + cyclic_realized
 
-# ─── Write input files ────────────────────────────────────────────────
+#  Write input files 
 def fmt_dict(d, indent=4):
     pad = " " * indent
     lines = [f"{pad}{k!r}: {v!r}," for k, v in d.items()]
@@ -129,7 +123,7 @@ write_input_file(
     cyclic_realized_35
 )
 
-# ─── Comparison plot (saved as PNG) ───────────────────────────────────
+#  Comparison plot 
 fig, axes = plt.subplots(2, 1, figsize=(12, 7), sharex=True)
 
 weeks_all = np.arange(1, 36)
