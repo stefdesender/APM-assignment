@@ -1,7 +1,6 @@
 """
-APM Project 2026 - Assignment 3b
-MIP model for production planning with finite capacity + overtime option
-using REALIZED demand and allowing BACKORDERS
+Assignment 3b
+
 """
 
 import gurobipy as gp

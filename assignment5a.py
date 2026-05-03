@@ -1,5 +1,5 @@
 """
-APM Project 2026 - Assignment 5a
+Assignment 5a
 """
 
 import gurobipy as gp
@@ -109,7 +109,7 @@ if model.status == GRB.OPTIMAL:
         ws = wb.active
         ws.title = SHEET_NAME
 
-    # ── Styles ────────────────────────────────────────────────────────────
+    #  Styles 
     NO_FILL    = PatternFill(fill_type=None)
     BLACK_FILL = PatternFill("solid", start_color="000000", end_color="000000")
     none_border = Border()
@@ -143,12 +143,12 @@ if model.status == GRB.OPTIMAL:
         ws.column_dimensions[get_column_letter(col)].width = 5.5
     last_col = T + 2
 
-    # ── Title ──────────────────────────────────────────────────────────────
+    #  Title 
     ws.row_dimensions[1].height = 26
     ws.merge_cells(f"B1:{get_column_letter(last_col)}1")
     plain(ws.cell(1, 2), "Assignment 5a - Optimal solution (overtime + permanent expansion)", bold=True, size=13)
 
-    # ── Cost summary ───────────────────────────────────────────────────────
+    #  Cost summary 
     ws.row_dimensions[2].height = 4
     cost_rows = [
         ("Setup cost",          total_setup,                  False),
@@ -166,7 +166,7 @@ if model.status == GRB.OPTIMAL:
         plain(ws.cell(r, 3), round(clean_num(val), 2), bold=bold, size=9, fmt='"€"#,##0.00')
         ws.merge_cells(f"C{r}:{get_column_letter(last_col)}{r}")
 
-    # ── Expansion & overtime parameters ───────────────────────────────────
+    #  Expansion & overtime parameters 
     ws.row_dimensions[11].height = 6
     param_rows = [
         ("X  base capacity",     f"{CAP_X_BASE} units / week"),
@@ -184,9 +184,7 @@ if model.status == GRB.OPTIMAL:
         plain(ws.cell(r, 3), val, size=9, bold=("new base" in label))
         ws.merge_cells(f"C{r}:{get_column_letter(last_col)}{r}")
 
-    # ══════════════════════════════════════════════════════════════════════
     # Production schedule
-    # ══════════════════════════════════════════════════════════════════════
     r = 21
     section_title(ws, r, last_col, "Production / order schedule (units)")
     r += 1
@@ -204,9 +202,7 @@ if model.status == GRB.OPTIMAL:
             plain(ws.cell(r, t+2), val, bold=bool(val), size=9, align="center",
                   fmt='#,##0' if val != "" else None, border=bot_thin)
 
-    # ══════════════════════════════════════════════════════════════════════
-    # Inventory levels
-    # ══════════════════════════════════════════════════════════════════════
+    #  Inventory levels
     r += 2
     section_title(ws, r, last_col, "Inventory levels (end of period)")
     r += 1
@@ -225,9 +221,7 @@ if model.status == GRB.OPTIMAL:
                   color="000000" if v > 0 else "BBBBBB",
                   fmt='#,##0', border=bot_thin)
 
-    # ══════════════════════════════════════════════════════════════════════
-    # Overtime usage
-    # ══════════════════════════════════════════════════════════════════════
+    #  Overtime usage
     r += 2
     section_title(ws, r, last_col, "Overtime usage per week")
     r += 1
@@ -251,9 +245,7 @@ if model.status == GRB.OPTIMAL:
                   align="center", color=col,
                   fmt=fmt if v else None, border=bot_thin)
 
-    # ══════════════════════════════════════════════════════════════════════
     # Capacity utilisation (base + expansion + overtime)
-    # ══════════════════════════════════════════════════════════════════════
     r += 2
     section_title(ws, r, last_col,
                   f"Capacity utilisation  (X base: {round(cap_x_new)} u/wk  |  Y base: {round(cap_y_new)} min/wk)")
@@ -289,9 +281,7 @@ if model.status == GRB.OPTIMAL:
                   align="center", color=col,
                   fmt=fmt if raw > 0 else None, border=bot_thin)
 
-    # ══════════════════════════════════════════════════════════════════════
     # Setup decisions
-    # ══════════════════════════════════════════════════════════════════════
     r += 2
     section_title(ws, r, last_col, "Setup decisions")
     r += 1

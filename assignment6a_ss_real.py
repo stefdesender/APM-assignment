@@ -1,17 +1,6 @@
 """
-APM Project 2026 - Assignment 6a (realized demand evaluation, with safety stock)
+ Assignment 6a (realized demand evaluation, with safety stock)
 
-Runs two scenarios:
-  - 95% cycle service level (z = 1.65)
-  - 99% cycle service level (z = 2.33)
-
-For each scenario:
-  1. Compute safety stock from forecast errors (sigma_e, L+R, z).
-  2. Solve MIP on FORECASTED demand with I[E2801,t] >= SS.
-  3. Fix plan, simulate against REALIZED demand.
-  4. Write results to separate Excel sheet + print to terminal.
-
-At the end, a side-by-side comparison of both scenarios is printed.
 """
 
 import math
@@ -28,7 +17,7 @@ from input_data import (
     DEMAND_FORECAST, DEMAND_REALIZED, BACKORDER_COST
 )
 
-# ── Helper functions ───────────────────────────────────────────────────────
+#  Helper functions 
 def get_parents(part):
     parents = {}
     for parent, children in BOM.items():
@@ -40,7 +29,7 @@ def clean_num(val, tol=1e-6):
     v = float(val)
     return 0.0 if abs(v) < tol else round(v, 6)
 
-# ── Shared safety stock parameters ────────────────────────────────────────
+#  Shared safety stock parameters 
 forecast_errors = [DEMAND_REALIZED[t] - DEMAND_FORECAST[t] for t in range(T)]
 sigma_e   = statistics.stdev(forecast_errors)
 L         = LEAD_TIME[END_PRODUCT]
@@ -54,7 +43,7 @@ print(f"  Review period R:          {R} period(s)")
 print(f"  sigma_LTD (L+R={L+R}):     {sigma_LTD:.2f} units")
 print(f"──────────────────────────────────────────────────────\n")
 
-# ── Capacity parameters ──────────────────────────────────────────────────
+#  Capacity parameters 
 CAP_X_BASE     = 800
 CAP_X_MAX_EXP  = 200
 COST_EXP_X     = 10
@@ -70,14 +59,14 @@ PROC_Y = {"B1401": 3, "B2302": 2}
 
 periods = range(1, T + 1)
 
-# ── Scenarios to run ─────────────────────────────────────────────────────
+#  Scenarios to run 
 SCENARIOS = [
     {"label": "95% CSL", "z": 1.65, "sheet": "Output_6a_ss_rl_95"},
     {"label": "99% CSL", "z": 2.33, "sheet": "Output_6a_ss_rl_99"},
 ]
 
 OUTPUT_FILE = "OUTPUT.xlsx"
-results = []  # store results for comparison table
+results = [] 
 
 for scenario in SCENARIOS:
     z_val  = scenario["z"]
@@ -91,7 +80,7 @@ for scenario in SCENARIOS:
     print(f"  SCENARIO: {label}  (z = {z_val},  SS = {SAFETY_STOCK} units)")
     print(f"{'='*60}")
 
-    # ── Build and solve MIP on FORECASTED demand ──────────────────────
+    #  Build and solve MIP on FORECASTED demand 
     m = gp.Model(f"APM_6a_ss_{label}")
     m.setParam("OutputFlag", 0)
 
@@ -144,7 +133,7 @@ for scenario in SCENARIOS:
         print(f"  Model status: {m.Status}. No optimal solution found.")
         continue
 
-    # ── Extract plan ──────────────────────────────────────────────────
+    #  Extract plan 
     dx_val      = clean_num(dx.X)
     dy_pct_val  = clean_num(dy.X)
     invest_X    = COST_EXP_X     * dx_val
@@ -159,7 +148,7 @@ for scenario in SCENARIOS:
     schedule        = {i: {t: x[i, t].X for t in periods} for i in PARTS}
     setup_cost_plan = sum(SETUP_COST[i] for i in PARTS for t in periods if x[i, t].X > 0.5)
 
-    # ── Simulate against REALIZED demand ──────────────────────────────
+    #  Simulate against realized demand 
     inventory  = {i: {} for i in PARTS}
     held       = {i: {} for i in PARTS}
     backorders = {t: 0.0 for t in periods}
@@ -196,13 +185,13 @@ for scenario in SCENARIOS:
         inv_prev = inventory[END_PRODUCT][t]
         bo_prev  = backorders[t]
 
-    # ── Costs on realized simulation ──────────────────────────────────
+    #  Costs on realized simulation 
     total_holding   = sum(HOLDING_COST[i] * held[i][t] for i in PARTS for t in periods)
     total_backorder = sum(BACKORDER_COST * backorders[t] for t in periods)
     total_cost      = (setup_cost_plan + total_holding + total_backorder
                        + invest_X + invest_Y + total_ot_x + total_ot_y)
 
-    # ── Service metrics ───────────────────────────────────────────────
+    #  Service metrics 
     periods_no_bo = sum(1 for t in periods if backorders[t] == 0)
     service_level = periods_no_bo / T
     total_demand  = sum(DEMAND_REALIZED)
@@ -215,7 +204,7 @@ for scenario in SCENARIOS:
     fill_rate     = 1.0 - (total_new_bo / total_demand) if total_demand > 0 else 1.0
     units_on_time = total_demand - total_new_bo
 
-    # ── Store for comparison ──────────────────────────────────────────
+    #  Store for comparison 
     results.append({
         "label":       label,
         "z":           z_val,
@@ -233,7 +222,7 @@ for scenario in SCENARIOS:
         "bo_units":    total_new_bo,
     })
 
-    # ── Console output ────────────────────────────────────────────────
+    #  Console output 
     print(f"\n  Cost Summary (realized demand):")
     print(f"    Total cost:      EUR {clean_num(total_cost):>12,.2f}")
     print(f"      Setup:         EUR {clean_num(setup_cost_plan):>12,.2f}")
@@ -248,9 +237,7 @@ for scenario in SCENARIOS:
     print(f"    Backorder units: {total_new_bo:,.0f}")
     print(f"    Safety stock:    {SAFETY_STOCK} units\n")
 
-    # ══════════════════════════════════════════════════════════════════
     # Excel output
-    # ══════════════════════════════════════════════════════════════════
     if os.path.exists(OUTPUT_FILE):
         wb = load_workbook(OUTPUT_FILE)
         if sheet in wb.sheetnames:
@@ -421,9 +408,7 @@ for scenario in SCENARIOS:
     wb.save(OUTPUT_FILE)
     print(f"  Written to {OUTPUT_FILE} -> sheet '{sheet}'")
 
-# ══════════════════════════════════════════════════════════════════════════
 # Comparison table: 95% vs 99%
-# ══════════════════════════════════════════════════════════════════════════
 if len(results) == 2:
     r95, r99 = results[0], results[1]
     print(f"\n{'='*74}")

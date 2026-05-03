@@ -69,17 +69,15 @@ for t in periods:
     model.addConstr(PROC_TIME_Y['B1401']*x['B1401',t] + PROC_TIME_Y['B2302']*x['B2302',t]
                     <= CAPACITY_Y + 60*ot_y[t], name=f"capacity_Y_{t}")
 
-# ─── Solution pool: zoek alle oplossingen met dezelfde optimale kost ───
+#  Solution pool
 model.setParam('PoolSearchMode', 2)
 model.setParam('PoolSolutions', 10)
 model.setParam('PoolGap', 0.0)
-# ───────────────────────────────────────────────────────────────────────
 
 model.optimize()
 
-# ─── Aantal alternate optima in terminal ───────────────────────────────
+
 print(f"\n>>> Aantal optimale oplossingen gevonden: {model.SolCount}\n")
-# ───────────────────────────────────────────────────────────────────────
 
 if model.status == GRB.OPTIMAL:
     total_setup   = sum(SETUP_COST[i]   * y[i,t].X for i in parts for t in periods)
@@ -100,7 +98,7 @@ if model.status == GRB.OPTIMAL:
         ws = wb.active
         ws.title = SHEET_NAME
 
-    # ── Styles ────────────────────────────────────────────────────────────
+    #  Styles 
     NO_FILL    = PatternFill(fill_type=None)
     BLACK_FILL = PatternFill("solid", start_color="000000", end_color="000000")
     none_border = Border()
@@ -128,7 +126,7 @@ if model.status == GRB.OPTIMAL:
         for col in range(3, last_col + 1):
             ws.cell(r, col).border = bot_medium
 
-    # ── Column widths ──────────────────────────────────────────────────────
+    #  Column widths 
     ws.column_dimensions["A"].width = 1
     ws.column_dimensions["B"].width = 9
     for col in range(3, T + 4):
@@ -136,12 +134,12 @@ if model.status == GRB.OPTIMAL:
 
     last_col = T + 2
 
-    # ── Title ──────────────────────────────────────────────────────────────
+    #  Title 
     ws.row_dimensions[1].height = 26
     ws.merge_cells(f"B1:{get_column_letter(last_col)}1")
     plain(ws.cell(1, 2), "Assignment 3a - Optimal solution (finite capacity + overtime)", bold=True, size=13)
 
-    # ── Cost summary ───────────────────────────────────────────────────────
+    #  Cost summary 
     ws.row_dimensions[2].height = 4
     cost_rows = [
         ("Setup cost",          total_setup,                  False),
@@ -158,7 +156,7 @@ if model.status == GRB.OPTIMAL:
         plain(vc, round(clean_num(val), 2), bold=bold, size=9, fmt='"€"#,##0.00')
         ws.merge_cells(f"C{r}:{get_column_letter(last_col)}{r}")
 
-    # ── Capacity parameters ────────────────────────────────────────────────
+    #  Capacity parameters 
     ws.row_dimensions[9].height = 6
     param_rows = [
         ("X regular capacity",    f"{CAPACITY_X} units / week"),
@@ -173,9 +171,7 @@ if model.status == GRB.OPTIMAL:
         plain(vc, val, size=9)
         ws.merge_cells(f"C{r}:{get_column_letter(last_col)}{r}")
 
-    # ══════════════════════════════════════════════════════════════════════
     # Production schedule
-    # ══════════════════════════════════════════════════════════════════════
     r = 15
     section_title(ws, r, last_col, "Production / order schedule (units)")
     r += 1
@@ -193,9 +189,7 @@ if model.status == GRB.OPTIMAL:
             plain(ws.cell(r, t + 2), val, bold=bool(val), size=9, align="center",
                   fmt='#,##0' if val != "" else None, border=bot_thin)
 
-    # ══════════════════════════════════════════════════════════════════════
-    # Inventory levels
-    # ══════════════════════════════════════════════════════════════════════
+    #  Inventory levels
     r += 2
     section_title(ws, r, last_col, "Inventory levels (end of period)")
     r += 1
@@ -214,9 +208,7 @@ if model.status == GRB.OPTIMAL:
                   color="000000" if v > 0 else "BBBBBB",
                   fmt='#,##0', border=bot_thin)
 
-    # ══════════════════════════════════════════════════════════════════════
-    # Overtime usage
-    # ══════════════════════════════════════════════════════════════════════
+    #  Overtime usage
     r += 2
     section_title(ws, r, last_col, "Overtime usage per week")
     r += 1
@@ -225,7 +217,7 @@ if model.status == GRB.OPTIMAL:
     for t in periods:
         hdr(ws.cell(r, t + 2), str(t))
 
-    # X overtime (units)
+    # X overtime 
     r += 1
     ws.row_dimensions[r].height = 15
     plain(ws.cell(r, 2), "X  (units OT)", size=9, border=bot_thin)
@@ -235,7 +227,7 @@ if model.status == GRB.OPTIMAL:
         plain(ws.cell(r, t + 2), v if v else "", bold=(v > 0), size=9, align="center",
               color=col, fmt='#,##0' if v else None, border=bot_thin)
 
-    # Y overtime (hours)
+    # Y overtime 
     r += 1
     ws.row_dimensions[r].height = 15
     plain(ws.cell(r, 2), "Y  (hours OT)", size=9, border=bot_thin)
@@ -256,9 +248,7 @@ if model.status == GRB.OPTIMAL:
         plain(ws.cell(r, t + 2), c if c else "", bold=(c > 0), size=9, align="center",
               color=col, fmt='"€"#,##0.00' if c else None, border=bot_thin)
 
-    # ══════════════════════════════════════════════════════════════════════
     # Capacity usage (regular + overtime)
-    # ══════════════════════════════════════════════════════════════════════
     r += 2
     section_title(ws, r, last_col, "Capacity usage per week (regular + overtime)")
     r += 1
@@ -317,9 +307,7 @@ if model.status == GRB.OPTIMAL:
         plain(ws.cell(r, t + 2), round(pct, 3) if pct > 0 else "", size=9,
               align="center", color=col, fmt='0%' if pct > 0 else None, border=bot_thin)
 
-    # ══════════════════════════════════════════════════════════════════════
     # Setup decisions
-    # ══════════════════════════════════════════════════════════════════════
     r += 2
     section_title(ws, r, last_col, "Setup decisions")
     r += 1

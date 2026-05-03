@@ -1,5 +1,5 @@
 """
-APM Project 2026 - Assignment 6a
+Assignment 6a
 Idea: Sensitivity analysis on the maximum expansion cap of Workstation Y.
 """
 
@@ -16,7 +16,7 @@ from input_data import (
     DEMAND_FORECAST, DEMAND_REALIZED, BACKORDER_COST
 )
 
-# ── helpers ───────────────────────────────────────────────────────────────────
+#  helpers 
 def get_parents(part):
     parents = {}
     for parent, children in BOM.items():
@@ -28,14 +28,14 @@ def clean_num(val, tol=1e-6):
     v = float(val)
     return 0.0 if abs(v) < tol else round(v, 6)
 
-# ── constants (identical to 5a/5b) ───────────────────────────────────────────
+#  constants (identical to 5a/5b) 
 CAP_X_BASE     = 800
 CAP_X_MAX_EXP  = 200
 COST_EXP_X     = 10
 CAP_X_OT_MAX   = 300
 COST_OT_X      = 2
 
-CAP_Y_BASE     = 60 * 24 * 7 - 80          # 10 000 min/week
+CAP_Y_BASE     = 60 * 24 * 7 - 80          
 COST_EXP_Y_PCT = 1_500
 CAP_Y_OT_MAX   = 38
 COST_OT_Y      = 120
@@ -46,12 +46,12 @@ PROC_Y = {"B1401": 3, "B2302": 2}
 periods = range(1, T + 1)
 BIG_M   = {i: sum(DEMAND_FORECAST) * 25 for i in PARTS}
 
-# ── sensitivity range ─────────────────────────────────────────────────────────
+#  sensitivity range 
 REF_DY_PCT = 14.1
 CAP_VALUES = [round(REF_DY_PCT - 2 * 5, 1), round(REF_DY_PCT - 1 * 5, 1)] + [round(REF_DY_PCT + i * 5, 1) for i in range(0, 14)]
 # → [14.1, 19.1, 24.1, 29.1, 34.1, 39.1, 44.1, 49.1, 54.1, 59.1, 64.1, 69.1, 74.1, 79.1]
 
-# ── solve one scenario ────────────────────────────────────────────────────────
+#  solve one scenario 
 def solve_scenario(cap_y_max_pct: float) -> dict | None:
     """
     Build and solve the 5a model with a given max-expansion cap for Y.
@@ -133,7 +133,7 @@ def solve_scenario(cap_y_max_pct: float) -> dict | None:
     )
 
 
-# ── simulate realized demand (identical logic to 5b) ─────────────────────────
+#  simulate realized demand (identical logic to 5b) 
 def simulate_realized(res: dict) -> dict:
     schedule  = res["schedule"]
     ot_x_vals = res["ot_x_vals"]
@@ -213,7 +213,7 @@ def simulate_realized(res: dict) -> dict:
     )
 
 
-# ── run all scenarios ─────────────────────────────────────────────────────────
+#  run all scenarios 
 print("Running sensitivity analysis on max expansion cap of Workstation Y …")
 print(f"{'Cap (%)':>8}  {'dy chosen (%)':>14}  {'Cost forecast':>14}  "
       f"{'Cost realized':>14}  {'SL':>6}  {'FR':>7}")
@@ -234,7 +234,7 @@ for cap in CAP_VALUES:
           f"{sim['service_level']*100:>5.1f}%  "
           f"{sim['fill_rate']*100:>6.2f}%")
 
-# ── write to OUTPUT.xlsx ──────────────────────────────────────────────────────
+#  write to output file
 OUTPUT_FILE = "OUTPUT.xlsx"
 SHEET_NAME  = "Output_6a_maxY"
 
@@ -248,7 +248,7 @@ else:
     ws  = wb.active
     ws.title = SHEET_NAME
 
-# ── style helpers ─────────────────────────────────────────────────────────────
+#  style helpers 
 NO_FILL    = PatternFill(fill_type=None)
 BLACK_FILL = PatternFill("solid", start_color="000000", end_color="000000")
 GREY_FILL  = PatternFill("solid", start_color="F2F2F2", end_color="F2F2F2")
@@ -299,9 +299,9 @@ col_labels = [
 for col_letter, w in col_labels:
     ws.column_dimensions[col_letter].width = w
 
-LAST_COL = 10   # column J
+LAST_COL = 10   
 
-# ── Title ─────────────────────────────────────────────────────────────────────
+#  Title 
 ws.row_dimensions[1].height = 28
 ws.merge_cells("B1:J1")
 plain(ws.cell(1,2),
@@ -315,7 +315,7 @@ plain(ws.cell(2,2),
       "build component buffer → reduce backorders under realized demand.",
       size=8, color="555555")
 
-# ── Summary table (forecast + realized) ──────────────────────────────────────
+#  Summary table (forecast + realized) 
 r = 4
 section_title(ws, r, LAST_COL,
               "Sensitivity table: forecast cost vs realized cost per max-cap scenario")
@@ -336,11 +336,11 @@ for res in results:
     ws.row_dimensions[r].height = 16
     sim = res["sim"]
 
-    # highlight the reference row (cap = 40, identical to 5a/5b)
+    
     is_ref = (res["cap_y_max_pct"] == 40)
     row_fill = LGREY_FILL if is_ref else NO_FILL
 
-    # find best realized cost to highlight
+
     best_realized = min(r2["sim"]["total_cost"] for r2 in results)
     is_best = abs(sim["total_cost"] - best_realized) < 0.01
 
@@ -364,7 +364,7 @@ for res in results:
         plain(ws.cell(r, c), val, bold=bold, align=align,
               fmt=fmt, color=color, border=full_thin, fill=row_fill)
 
-# ── Cost breakdown per scenario ───────────────────────────────────────────────
+#  Cost breakdown per scenario 
 r += 2
 section_title(ws, r, LAST_COL, "Full cost breakdown (realized demand)")
 r += 1
@@ -409,7 +409,7 @@ for res in results:
               color="CC0000" if (c == 5 and val > 0) else "000000")
 
 
-# ── Backorders per period ─────────────────────────────────────────────────────
+#  Backorders per period 
 r += 2
 BO_LAST_COL = 2 + T + 1
 section_title(ws, r, BO_LAST_COL, "Backorders per period (units, realized demand)")
@@ -452,9 +452,7 @@ for res in results:
           border=full_thin, fill=row_fill,
           color="CC0000" if total_bo > 0 else "000000")
 
-# ══════════════════════════════════════════════════════════════════════════
 # Chart: Forecast cost vs Realized cost per cap scenario
-# ══════════════════════════════════════════════════════════════════════════
 from openpyxl.chart import BarChart, Reference, Series
 
 r += 2
@@ -493,7 +491,7 @@ for idx, res in enumerate(results):
 n_scenarios = len(results)
 chart_data_end_row = chart_data_start_row + n_scenarios
 
-# ── Bar chart: forecast vs realized total ────────────────────────────────
+#  Bar chart: forecast vs realized total 
 chart = BarChart()
 chart.type      = "col"
 chart.grouping  = "clustered"
@@ -524,7 +522,7 @@ chart.set_categories(labels)
 chart_anchor_row = chart_data_end_row + 2
 ws.add_chart(chart, f"B{chart_anchor_row}")
 
-# ── Stacked bar chart: cost breakdown under realized demand ───────────────
+#  Stacked bar chart: cost breakdown under realized demand 
 chart2 = BarChart()
 chart2.type      = "col"
 chart2.grouping  = "stacked"
