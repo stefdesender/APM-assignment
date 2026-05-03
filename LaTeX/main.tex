@@ -1048,9 +1048,9 @@ However, applying Holt's method to this problem is not appropriate for two reaso
 
 A key observation from the results of Assignments 1 through 5 is that backorders tend to concentrate in the final periods of the planning horizon. This occurs because the optimizer, knowing that no demand exists beyond period 30, deliberately runs down inventory toward the end of the horizon to minimize holding costs. In practice, however, the company will continue to operate beyond 30 weeks, and this so-called \textit{end-of-horizon effect} leads to an artificially optimistic plan that underperforms when evaluated against realized demand.
 
-To mitigate this effect, the planning horizon was extended from 30 to 35 weeks. The additional 5 weeks of demand data serve as a buffer: the optimizer now plans production beyond week 30, preventing it from draining inventory prematurely. All time-dependent costs (setup, holding, backorder, and overtime) over the 35-week horizon are then rescaled to a 30-week equivalent using factor $D = 30/35$ to allow a fair comparison with the original 30-week results from Assignment 5. Investment costs, being one-time expenditures independent of the horizon length, are not rescaled.
+To mitigate this effect, the planning horizon was extended from 30 to 35 weeks. The additional 5 weeks of demand data serve as a buffer: the optimizer now plans production beyond week 30, preventing it from draining inventory prematurely. All time-dependent costs (setup, holding, backorder, and overtime) over the 35-week horizon are then rescaled to a 30-week equivalent using factor $D = 30/35$ to allow a fair comparison with the original 30-week results from Assignment 5. Investment costs, being one-time expenditures independent of the horizon length, are not rescaled. A limitation of this approach is that the demand values for weeks 31--35 are necessarily estimated, as no observed data exists beyond the original 30-week horizon. The quality of the results therefore depends on the accuracy of this estimate.
 
-Since no demand data is available beyond week 30, the demand for weeks 31--35 must be estimated. Two methods were considered:
+For the estimation, two methods were considered:
 
 \begin{itemize}
     \item \textbf{Linear extrapolation:} A linear least-squares regression was fitted to the 30 observed weeks of demand data. The resulting trend line was then extended to predict demand for weeks 31--35. The realized demand series exhibits a slope of approximately $+1.54$ units per week, indicating a mild upward trend. This method is statistically grounded but produces extrapolated values where realized demand systematically exceeds the forecast, which can amplify the end-of-horizon backorder effect in the extended weeks.
@@ -1203,7 +1203,7 @@ Beyond the modeled uncertainties, supply-side disruptions such as supplier relia
 
 \hangindent=1.5em
 \hangafter=1
-Limière, V. (2026). APM3\_ProductionPlanning\_GroupProject [Lecture slides, Advanced Production Management, Ghent University].
+Limère, V. (2026). APM3\_ProductionPlanning\_GroupProject [Lecture slides, Advanced Production Management, Ghent University].
 
 \hangindent=1.5em
 \hangafter=1
@@ -1211,11 +1211,11 @@ Graves, S. C. (1999). Manufacturing planning and control (Working paper). Massac
 
 \hangindent=1.5em
 \hangafter=1
-Limière, V. (2026). APM4\_Inventory\_Deterministic [Lecture slides, Advanced Production Management, Ghent University].
+Limère, V. (2026). APM4\_Inventory\_Deterministic [Lecture slides, Advanced Production Management, Ghent University].
 
 \hangindent=1.5em
 \hangafter=1
-Limière, V. (2026). APM5\_Inventory\_Stochastic [Lecture slides, Advanced Production Management, Ghent University].
+Limère, V. (2026). APM5\_Inventory\_Stochastic [Lecture slides, Advanced Production Management, Ghent University].
 
 \end{flushleft}
 
