@@ -1047,7 +1047,43 @@ However, applying Holt's method to this problem is not appropriate for two reaso
 
 \vspace{0.5em}
 \textbf{Idea 4: Increasing the number of periods in the planning horizon}
+A key observation from the results of Assignments 1 through 5 is that backorders tend to concentrate in the final periods of the planning horizon. This occurs because the optimizer, knowing that no demand exists beyond period 30, deliberately runs down inventory toward the end of the horizon to minimize holding costs. In practice, however, the company will continue to operate beyond 30 weeks, and this so-called \textit{end-of-horizon effect} leads to an artificially optimistic plan that underperforms when evaluated against realized demand.
 
+To mitigate this effect, the planning horizon was extended from 30 to 35 weeks. The additional 5 weeks of demand data serve as a buffer: the optimizer now plans production beyond week 30, preventing it from draining inventory prematurely. All time-dependent costs (setup, holding, backorder, and overtime) over the 35-week horizon are then rescaled to a 30-week equivalent using factor $D = 30/35$ to allow a fair comparison with the original 30-week results from Assignment 5. Investment costs, being one-time expenditures independent of the horizon length, are not rescaled.
+
+Since no demand data is available beyond week 30, the demand for weeks 31--35 must be estimated. Two methods were considered:
+
+\begin{itemize}
+    \item \textbf{Linear extrapolation:} A linear least-squares regression was fitted to the 30 observed weeks of demand data. The resulting trend line was then extended to predict demand for weeks 31--35. The realized demand series exhibits a slope of approximately $+1.54$ units per week, indicating a mild upward trend. This method is statistically grounded but produces extrapolated values where realized demand systematically exceeds the forecast, which can amplify the end-of-horizon backorder effect in the extended weeks.
+    \item \textbf{Cyclic repetition:} The demand values from weeks 1--5 are repeated as weeks 31--35. This is a simpler heuristic that assumes demand patterns are roughly periodic. In our dataset, weeks 1--5 represent a low-demand startup phase where realized demand is generally below the forecast, which provides a natural buffer against backorders in the extended period.
+\end{itemize}
+
+A visual comparison of both extrapolation methods can be found in Appendix~\ref{app:extrapolation}.
+
+The key results are summarized in Table~\ref{tab:horizon_results}.
+
+\begin{table}[h]
+    \centering
+    \caption{Extended horizon (35 periods): cost comparison (30-week equivalent)}
+    \label{tab:horizon_results}
+    \begin{tabular}{l c c c c c}
+        \toprule
+        \textbf{Design} & \textbf{Total (forecast)} & \textbf{Total (realized)} & \textbf{\# backorder} & \textbf{Service level} & \textbf{Fill rate} \\
+        \midrule
+        Assignment 5        & \texteuro 510,077 & \texteuro 553,687 & 149   & 93.3\% & 97.52\% \\
+        Linear extrap.      & \texteuro 505,814 & \texteuro 604,858 & 91    & 93.3\% & 98.49\% \\
+        Cyclic repetition   & \texteuro 494,011 & \texteuro 535,141 & 67    & 93.3\% & 98.89\% \\
+        \bottomrule
+    \end{tabular}
+\end{table}
+
+On forecasted demand, both extended-horizon variants yield a lower total cost than Assignment~5, confirming that the longer planning horizon allows the optimizer to find more efficient production schedules. The cyclic variant achieves the largest reduction (-3.1\%), while the linear variant saves approximately 0.8\%.
+
+Under realized demand, however, the two methods diverge significantly. The cyclic variant reduces total cost by 3.3\% relative to Assignment~5 (\texteuro 535,141 vs.\ \texteuro 553,687) and cuts backorders from 149 to 67 units, improving the fill rate from 97.52\% to 98.89\%. The linear variant, by contrast, increases total cost by 9.2\% to \texteuro 604,858 with 91 backorders. This counterintuitive result occurs because the linearly extrapolated realized demand for weeks 31--35 consistently exceeds the extrapolated forecast (by approximately 20--25 units per week), causing the optimizer to under-plan production for those weeks and generating substantial backorders in the extended period. Since all costs---including these artificial backorders---are scaled by factor $D$, they inflate the 30-week equivalent cost.
+
+The cyclic variant avoids this issue because weeks 1--5 of our dataset have realized demand below the forecast, so the extended weeks act as a genuine buffer rather than a source of additional backorders.
+
+Based on these results, the cyclic repetition method was selected as the preferred approach for the extended horizon analysis. It demonstrates that by simply extending the planning horizon with a reasonable demand estimate, the system can simultaneously reduce total cost by 3.3\%, cut backorders by more than half (from 149 to 67 units), and improve the fill rate from 97.52\% to 98.89\%. This confirms that a significant portion of the backorder cost observed in Assignment~5 is attributable to the end-of-horizon effect rather than to a fundamental capacity or planning deficiency.
 
 \vspace{0.5em}
 \textbf{Idea 5: Capacity expansion both workstations}
